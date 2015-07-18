@@ -4,19 +4,26 @@
 #ifndef __BIOMAPPER_HPP_INCLUDED__
 #define __BIOMAPPER_HPP_INCLUDED__
 
+enum CrossMapType { OVERLAP, EXCLUSIVE };
+
 class BioMapper
 {
 
 	public:
-		std::vector <std::string> references;
-		BioMapper();
+		
+	  BioMapper();
 
-		void determineReferences();
-		bool determineArguments(int argc, char** argv);
-		void printFiles ();
+	  void determineReferences();
+	  bool determineArguments(int argc, char** argv);
+
+	  // Debugging
+	  void printFiles ();
+	  int returnNumberOfAnnotationFiles ();
 	
 	private:
-		std::vector <std::string> annotationFiles;
+	  CrossMapType mappingStyle;
+	  std::vector <std::string> annotationFiles;
+	  std::vector <std::string> referenceNames;
 
 };
 
