@@ -7,6 +7,10 @@ using namespace std;
 int main (int argc, char* argv[])
 {
 
+#ifdef DEBUG
+	cout << "\n\nDebug works\n\n";
+#endif
+
 	BioMapper myMap;
 	bool validateArguments = myMap.determineArguments(argc, argv);
 	if (!validateArguments) {
@@ -25,16 +29,22 @@ int main (int argc, char* argv[])
 	 return 0;
 	}
 	
-	// DEBUG
-	myMap.printFiles();
+	#ifdef DEBUG
+		myMap.printFiles();
+	#endif
 	
 	// Currently have files from command line
 	// also have start, end, and reference (chromosome) id columns.
 	// Need to determine references and make sure they match
 	// Include 'smart' reference matching flag?
-	
-	int numberOfFiles = myMap.returnNumberOfAnnotationFiles();
-	cout << "Number of Files: " << numberOfFiles << endl;
+
+	// Loop through
+	// mapFiles(&refID)
+	//	
+	#ifdef DEBUG
+		int numberOfFiles = myMap.returnNumberOfAnnotationFiles();
+		cout << "Number of Files: " << numberOfFiles << endl;
+	#endif
 	
 	
 }

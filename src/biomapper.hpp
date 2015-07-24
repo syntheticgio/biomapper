@@ -1,5 +1,6 @@
 #include <vector>
 #include <string>
+#include <map>
 
 #ifndef __BIOMAPPER_HPP_INCLUDED__
 #define __BIOMAPPER_HPP_INCLUDED__
@@ -8,8 +9,8 @@ enum CrossMapType { OVERLAP, EXCLUSIVE };
 class idx
 {
 public:
-  idx () : val(0);
-  int val;
+  idx () : val(0) { };
+  int64_t val;
 };
 
 
@@ -22,13 +23,14 @@ class BioMapper
 
 	  bool determineReferences();
 	  bool determineArguments(int argc, char** argv);
+	  bool mapFiles(std::string * refID);
 	  
 	  bool argumentCleanup ();
+	  int returnNumberOfAnnotationFiles ();
 	  
 
-	  // Debugging
+	// Debugging
 	  void printFiles ();
-	  int returnNumberOfAnnotationFiles ();
 	  void printClassVariables ();
 	
 	private:
@@ -38,6 +40,7 @@ class BioMapper
 	  int endColumn;
 	  int lastColumn;
 	  bool header;
+	  int annotationFileNumber;
 	  std::string fileType;
 	  std::vector <std::string> annotationFiles;
 	  std::vector <std::string> headerRows;

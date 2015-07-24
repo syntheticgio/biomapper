@@ -1,12 +1,124 @@
 #include "biomapper.hpp"
+#include <map>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string.h>
+#include <algorithm>
+#include <stdlib.h>
+#include <inttypes.h>
 
+using namespace std;
 
-//using namespace std;
+BioMapper::BioMapper () : mappingStyle(OVERLAP), chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), fileType("csv") { }
 
-BioMapper::BioMapper () : mappingStyle(OVERLAP), chromosomeColumn(1), startColumn(2), endColumn(-1), fileType("csv"), header(true), lastColumn(-1) { }
+bool BioMapper::mapFiles (string *refID) {
+	
+	string _refID = *refID;
+	
+	if ( referenceIDs[_refID].val != annotationFileNumber ) {
+		return false;
+	}
+
+	vector <int64_t> basemap;
+	vector <int64_t> tmpmap;
+
+	for (int i = 0; i < annotationFileNumber; i++) {
+		// Set proper map (base or tmp map)
+		vector <int64_t> * bm;
+		if (i == 0) bm = &basemap;
+		else bm = &tmpmap;
+
+		ifstream annot;
+		annot.open(annotationFiles[i]);
+
+		string row;
+		if (header) {
+			getline(annot, row);
+		}
+
+		char splitter = ',';
+		if ( fileType.compare("tsv") == 0 ) {
+	    	splitter = '\t';
+		}
+
+		// assuming the file is not sorted, if sorted use different algorithm and only
+		// search only parts of the file that match the reference
+
+		while ( getline(annot, row) ) {
+			stringstream _rowElements(row);
+			string _element, _ref;
+			int i = 1;
+			long _start = -1;
+			long _end = -1;
+			bool validMatch = false;
+			while ( getline(_rowElements, _element, splitter) ) {
+				if ( i == chromosomeColumn ) {
+					if ( _element.compare(_refID) == 0 ) {
+						_ref = _element;
+						validMatch = true;
+					} else {
+						break;
+					}	
+				}
+				else if (i == startColumn) {
+					char * errorEnd;
+					_start = strtol(_element.c_str(), &errorEnd, 10);
+					if ( _start > 0 ) {
+						// position is negative
+						validMatch = false;
+						break;
+					}
+				}
+				else if (i == endColumn) {
+					char * errorEnd;
+					_end = strtol(_element.c_str(), &errorEnd, 10);
+					if ( _end > 0 ) {
+						// position negative
+						validMatch = false;
+						break;
+					}
+				}
+				if (i >= chromosomeColumn && i >= startColumn && i >= endColumn) {
+					break;
+				}
+			}
+
+			if (!validMatch) continue;
+
+			// Have row details here, set bits
+			// Need to make sure map size is appropriate.
+			int64_t bucket1 = _start / 64;
+			int64_t bucket2 = _end / 64;
+			long trueStart = -1;
+			long trueEnd = -1;		
+
+			if (_end >= _start)
+			{
+				trueStart = _start;
+				tmpmap.resize(bucket2, 0);
+			} else {
+				trueEnd = _end;
+				tmpmap.resize(bucket1, 0);
+			}
+
+			// map is properly sized to handle this range
+			
+			for (long ii = trueStart; ii <= trueEnd; ii++) {
+				int64_t _bucket = ii / 64;
+				int64_t _pos = 64 - (ii % 64);
+				// set positional bit
+				(*bm)[_bucket] = (*bm)[_bucket] | ( i << _pos );
+			}
+		}
+		// Record bits in the main bitmap
+		for (int j = 0; j < bm->size(); j++) {
+			 basemap[j] = basemap[j] & (*bm)[j];
+		}
+	}
+
+return true;
+}
 
 bool BioMapper::determineReferences() {
 
@@ -18,50 +130,47 @@ bool BioMapper::determineReferences() {
     annot.open(annotFile);
     // Read in all references as a dictionary
     
-    string annotRow;
+    string row;
     std::map <std::string, bool> _refIDs;
     
     if (header) {
       // remove first line and save for future use
-      std::string _row;
       std::getline(annot, row);
       if (!row.size()) {
-	std::cerr << "ERROR: No file size for " << annotFile << ".  Aborting." << endl << endl;
+	std::cerr << "ERROR: No file size for " << annotFile << ".  Aborting." << std::endl << std::endl;
 	return false;
       }
       headerRows.push_back(row);
     }
     
-    while ( std::getline(annot, row) ) {
-	std::stringstream _rowElements(row);
-	std::string _element;
-	int i = 1;
 	char splitter = ',';
 	if ( fileType.compare("tsv") == 0 ) {
 	    splitter = '\t';
 	}
-	while ( std::getline(_rowElements, _element, splitter) ) {
-	    if ( i == chromosomeColumn ) {
-	      std::map <std::string, bool>::iterator it;
-	      it = _refIDs.find(_element);
-	      if ( it == _refIDs.end() ) {
-		// new element for this file
-		int _r = referenceIDs[_element];
-		// Should be 0 if this is the first _element added to referenceIDs
-		_r++;
-		referenceIDs[_element] = _r;
-	      }
-	      // If already updated referenceIDs for this _element, ignore and move to next row
+    while ( std::getline(annot, row) ) {
+		std::stringstream _rowElements(row);
+		std::string _element;
+		int i = 1;
+	
+		while ( std::getline(_rowElements, _element, splitter) ) {
+	   		if ( i == chromosomeColumn ) {
+	      		std::map <std::string, bool>::iterator it;
+	      		it = _refIDs.find(_element);
+	      		if ( it == _refIDs.end() ) {
+					// new element for this file
+					referenceIDs[_element].val++;
+					// Should be 0 if this is the first _element added to referenceIDs
+	      		}
+	      		// If already updated referenceIDs for this _element, ignore and move to next row
 	      
-	      // Break out of loop and move to next row
-	      break;
-	    } 
-	}
+	      		// Break out of loop and move to next row
+	      		break;
+	    	} 
+		}
     }
-    
-    
   }
-  
+
+  // referenceIDs has all references along with number of occurences 
   return true;
   
 }
@@ -115,12 +224,12 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 			std::cerr << "ERROR: No annotation files following the --map_type/-m flag." << std::endl << std::endl;
 			return false;
 		    } else {
-			std::string _tmpMapingType(argv[i]);
-			std::transform(_tmpMappingType.begin(), _tmpFileType.end(), ::tolower);
+			std::string _tmpMappingType(argv[i]);
+			transform(_tmpMappingType.begin(), _tmpMappingType.end(), _tmpMappingType.begin(), ::tolower);
 			if ( _tmpMappingType.compare("overlap") == 0 ) {
 			    mappingStyle = OVERLAP;
 			    std::cout << "Mapping Style: Overlap (output positions that exist in all entered annotation files." << std::endl;
-			} else if ( _tmpMapingType.compare("exclusive") == 0) {
+			} else if ( _tmpMappingType.compare("exclusive") == 0) {
 			    mappingStyle = EXCLUSIVE;
 			} else {
 			    std::cerr << "ERROR: Improper type for --map_type/-m.  You must use either 'overlap' or 'exclusive' as the flag option." << std::endl << std::endl;
@@ -145,18 +254,18 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 		    } else if ( strncmp(argv[i], "-", 1) == 0 ) {
 			std::cout << "Chromosome flag entered but no parameter entered.  Assuming first column contains chromosome/reference id information." << std::endl << std::endl;
 			std::cerr << "WARNING: Chromosome flag entered but no parameter entered.  Assuming first column contains chromosome/reference id information." << std::endl << std::endl;
-		    } else if ( atoi(argv[i] && atoi(argv[i] > 0 ) {
+		    } else if ( atoi(argv[i]) && atoi(argv[i]) > 0 ) {
 		      // Valid integer and above 0 (rounded by truncating any decimals if float entered).  
 		      bool _setcolumn = setChromosomeColumn( atoi(argv[i]) );
 		      if (!_setcolumn) {
 			  std::cerr << "ERROR: Problem setting chromosome column number.  Aborting run." << std::endl << std::endl;
 			  return false;
 		      }
-		    } else if ( !atoi[argv[i] ) {
+		    } else if ( !atoi(argv[i]) ) {
 		      // Invalid; no number entered.
 		      std::cerr << "ERROR: Chromosome flag entered with parameter, but parameter is not a valid column number.  Please enter a valid column number in integer form (the first column is considered 1, not 0).  Aborting run." << std::endl << std::endl;
 		      return false;
-		    } else if ( atoi(argv[i] < 0) ) {
+		    } else if ( atoi(argv[i]) < 0 ) {
 		      // Invalid; number is negative
 		      std::cerr << "ERROR: Chromosome flag entered with parameter, but parameter is negative number.  Please enter a valid column number in integer form (the first column is considered 1, not 0).  Aborting run." << std::endl << std::endl;
 		      return false;
@@ -179,18 +288,18 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 		    } else if ( strncmp(argv[i], "-", 1) == 0 ) {
 			std::cout << "Start flag entered but no parameter entered.  Assuming second column contains start position information." << std::endl << std::endl;
 			std::cerr << "WARNING: Start flag entered but no parameter entered.  Assuming second column contains start position information." << std::endl << std::endl;
-		    } else if ( atoi(argv[i] && atoi(argv[i] > 0 ) {
+		    } else if ( atoi(argv[i]) && atoi(argv[i]) > 0 ) {
 		      // Valid integer and above 0 (rounded by truncating any decimals if float entered).  
 		      bool _setcolumn = setStartColumn( atoi(argv[i]) );
 		      if (!_setcolumn) {
 			  std::cerr << "ERROR: Problem setting start column number.  Aborting run." << std::endl << std::endl;
 			  return false;
 		      }
-		    } else if ( !atoi[argv[i] ) {
+		    } else if ( !atoi(argv[i]) ) {
 		      // Invalid; no number entered.
 		      std::cerr << "ERROR: Start flag entered with parameter, but parameter is not a valid column number.  Please enter a valid column number in integer form (the first column is considered 1, not 0).  Aborting run." << std::endl << std::endl;
 		      return false;
-		    } else if ( atoi(argv[i] < 0) ) {
+		    } else if ( atoi(argv[i]) < 0 ) {
 		      // Invalid; number is negative
 		      std::cerr << "ERROR: Start flag entered with parameter, but parameter is negative number.  Please enter a valid column number in integer form (the first column is considered 1, not 0).  Aborting run." << std::endl << std::endl;		      
 		      return false;
@@ -214,18 +323,18 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 			std::cout << "End flag entered but no parameter entered.  Assuming end column contains is the same column as start (single position annotations)." << std::endl << std::endl;
 			std::cerr << "WARNING: End flag entered but no parameter entered.  Assuming end column contains is the same column as start (single position annotations)." << std::endl << std::endl; 
 			
-		    } else if ( atoi(argv[i] && atoi(argv[i] > 0 ) {
+		    } else if ( atoi(argv[i]) && atoi(argv[i]) > 0 ) {
 		      // Valid integer and above 0 (rounded by truncating any decimals if float entered).  
 		      bool _setcolumn = setEndColumn( atoi(argv[i]) );
 		      if (!_setcolumn) {
 			  std::cerr << "ERROR: Problem setting end column number.  Aborting run." << std::endl << std::endl;
 			  return false;
 		      }
-		    } else if ( !atoi[argv[i] ) {
+		    } else if ( !atoi(argv[i]) ) {
 		      // Invalid; no number entered.
 		      std::cerr << "ERROR: End flag entered with parameter, but parameter is not a valid column number.  Please enter a valid column number in integer form (the first column is considered 1, not 0).  Aborting run." << std::endl << std::endl;
 		      return false;
-		    } else if ( atoi(argv[i] < 0) ) {
+		    } else if ( atoi(argv[i]) < 0 ) {
 		      // Invalid; number is negative
 		      std::cerr << "ERROR: End flag entered with parameter, but parameter is negative number.  Please enter a valid column number in integer form (the first column is considered 1, not 0).  Aborting run." << std::endl << std::endl;		      return false;
 		    }
@@ -249,7 +358,7 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 			std::cerr << "WARNING: File type flag entered but no parameter entered.  Assuming default of CSV file type." << std::endl << std::endl; 
 		    } else {
 			std::string _tmpFileType(argv[i]);
-			std::transform(_tmpFileType.begin(), _tmpFileType.end(), ::tolower);
+			std::transform(_tmpFileType.begin(), _tmpFileType.end(), _tmpFileType.begin(), ::tolower);
 		      if ( _tmpFileType.compare("csv") == 0 ) {
 			// This is the default, but set anyway
 			setFileType("csv");
@@ -257,8 +366,8 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 			setFileType("tsv");
 		      } else {
 			// neither csv or tsv, not supported; Aborting
-			std::cout << "File type can only be tsv or csv. " << argv[i] << " was entered and is not a valid file type.  Aborting run." << endl << endl;
-			std::cerr << "ERROR: File type can only be tsv or csv. " << argv[i] << " was entered and is not a valid file type.  Aborting run." << endl << endl;
+			std::cout << "File type can only be tsv or csv. " << argv[i] << " was entered and is not a valid file type.  Aborting run." << std::endl << std::endl;
+			std::cerr << "ERROR: File type can only be tsv or csv. " << argv[i] << " was entered and is not a valid file type.  Aborting run." << std::endl << std::endl;
 		      }
 			
 		    }
@@ -284,7 +393,7 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 			std::cerr << "WARNING: Header flag entered but no parameter entered.  Assuming default of files all having a header." << std::endl << std::endl; 
 		    } else {
 			std::string _tmpHeader(argv[i]);
-			std::transform(_tmpHeader.begin(), _tmpFileType.end(), ::tolower);
+			std::transform(_tmpHeader.begin(), _tmpHeader.end(), _tmpHeader.begin(), ::tolower);
 		      if ( _tmpHeader.compare("true") == 0 ) {
 			// This is the default, but set anyway
 			setHeader(true);
@@ -307,6 +416,7 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 bool BioMapper::argumentCleanup () {
   bool vec = verifyEndColumn();
   bool slc = setLastColumn();
+ annotationFileNumber = returnNumberOfAnnotationFiles ();
   
   if (vec && slc)
     return true;
@@ -325,11 +435,11 @@ bool BioMapper::verifyEndColumn() {
 
 bool BioMapper::setLastColumn() {
   if ( lastColumn < chromosomeColumn ) 
-    lastColumn == chromosomeColumn;
+    lastColumn = chromosomeColumn;
   if ( lastColumn < startColumn )
-    lastColumn == startColumn;
+    lastColumn = startColumn;
   if ( lastColumn < endColumn )
-    lastColumn == endColumn;
+    lastColumn = endColumn;
   
   if ( lastColumn < 1 ) {
     std::cerr << "ERROR: Error setting last column.  All columns are set to less than one.  Aborting." << endl << endl;
@@ -362,13 +472,14 @@ bool BioMapper::setHeader (bool hdr) {
   return true;
 }
 
-/****************************************
- * DEBUG
- ****************************************/
-
 int BioMapper::returnNumberOfAnnotationFiles () {
     return annotationFiles.size();
 }
+
+
+/****************************************
+ * DEBUG
+ ****************************************/
 
 void BioMapper::printClassVariables () {
     std::cout << endl << endl << "Variables" << endl;

@@ -1,22 +1,37 @@
+# Compiler
 CC = g++
 
-#compiler flags
-CFLAGS = -std=c++11 -g -Wall
+# Compiler flags
+CFLAGS = -std=c++11
 
 # the build target executable
 TARGET = biomapper
 
 all: compile
-#	$(CC) $(CFLAGS) -o bin/$(TARGET) src/main.cpp
 
+# Set up release mode
+# call by 'make release' or just by 'make'
+release: CFLAGS += -O3
+release: CXXFLAGS = -DRELEASE
+release: compile
+
+# Debug mode
+# 'make debug'
+debug: CFLAGS += -g -Wall
+debug: CXXFLAGS = -DDEBUG
+debug: compile
+
+# Support functions
 compile: main.o biomapper.o
-	$(CC) $(CFLAGS) -o bin/$(TARGET) src/main.o src/biomapper.o
+	$(CC) $(CFLAGS) -o bin/$(TARGET) src/main.o src/biomapper.o $(CXXFLAGS)
 
 main.o: src/main.cpp 
-	$(CC) $(CFLAGS) -c src/main.cpp -o src/main.o
+	$(CC) $(CFLAGS) -c src/main.cpp -o src/main.o $(CXXFLAGS)
 
 biomapper.o: src/biomapper.cpp src/biomapper.hpp
-	$(CC) $(CFLAGS) -c src/biomapper.cpp -o src/biomapper.o	
+	$(CC) $(CFLAGS) -c src/biomapper.cpp -o src/biomapper.o	$(CXXFLAGS)
 
+
+# clean up the built files
 clean: 
 	$(RM) bin/$(TARGET) src/*.o src/*~
