@@ -1,0 +1,12 @@
+chromosome,start,end,information
+1,15,200,Protein
+1,45,225,Exon
+1,250,300,mRNA
+1,301,400,tRNA
+1,400,400,SNP
+3,100,200,mRNA
+3,500,1000,mRNA
+14,1,14,insert
+14,35,56,delete
+21,1,1,SNP
+21,1,1,DEL

@@ -1,0 +1,10 @@
+chromosome,start,end,information
+1,55,100,OVERLAP
+1,226,226,nolap
+1,250,300,OVERLAP
+1,1301,1400,nolap
+1,400,400,OVERLAPUnsorted
+3,50,150,PartialOVERLAP
+3,500,900,PartialOverlap
+21,1,1,OVERLAP
+21,2,2,DEL
