@@ -12,38 +12,75 @@ using namespace std;
 
 BioMapper::BioMapper () : mappingStyle(OVERLAP), chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), fileType("csv") { }
 
-bool BioMapper::mapFiles (string *refID) {
+bool BioMapper::mapFiles (string refID) {
 	
-	string _refID = *refID;
+	// Define reference for local variable, not strictly necessary
+	// but help avoid changing variable inadvertantly since passed
+	// in by reference.
+	string _refID = refID;
 	
-	if ( referenceIDs[_refID].val != annotationFileNumber ) {
+	// Check to see if the reference exists in the map generated earlier
+	// If reference is not in the reference set, then there is 
+	if ( referenceIDs[_refID] != annotationFileNumber ) {
+		#ifdef DEBUG
+			cout << "Reference " << _refID << " not found in all files" << endl;
+		#endif
 		return false;
 	}
-
+	
+	/*
+	 * Declare two vectors of bits (int64_t)
+	 * Each position in the reference id will be a single bit
+	 * If the bit is turned on, there was a match with all files so far
+	 * If the bit is tunred off, at least one file had no data at that position
+	 * The content of the data doesn't matter (i.e. the annotations
+	 * do not need to be the same, only exist at the same position).
+	 * Partial overlaps are allowed
+	 */
 	vector <int64_t> basemap;
 	vector <int64_t> tmpmap;
 
+	// Loop through each annotation file and compare position mapping culmatively
 	for (int i = 0; i < annotationFileNumber; i++) {
-		// Set proper map (base or tmp map)
 		vector <int64_t> * bm;
+		/* 
+		 * Set proper map (base or tmp map)
+		 * If it is the first time through the loop we make a pointer to
+		 * the main mapping vector - basemap.
+		 * If it any later iteration, we record the position bits for that
+		 * file in the temporary bitmap.  These two will be collapsed at the
+		 * end of the iteration.  This allows us to only carry through from
+		 * the first two iterations any positions that we know are of interest
+		 * and ignore those positions that by definition cannot satisfy the
+ 		 * mapping criteria.
+		 */
 		if (i == 0) bm = &basemap;
 		else bm = &tmpmap;
 
 		ifstream annot;
-		annot.open(annotationFiles[i]);
+		annot.open(annotationFiles[i]); // Open the current annotation file
 
 		string row;
+		
+		// Remove the header if it exists
+		//TODO: We will likely want to save the header in the future for 
+		// output.
 		if (header) {
 			getline(annot, row);
 		}
-
+		
+		// Determine the splitting character.  By default it is a comma (,) but
+		// it can be changed here to a tab.  Other filetypes could be added here
+		// as long as theya re supported in the argument interpreting function
 		char splitter = ',';
 		if ( fileType.compare("tsv") == 0 ) {
-	    	splitter = '\t';
+	    		splitter = '\t';
 		}
 
 		// assuming the file is not sorted, if sorted use different algorithm and only
 		// search only parts of the file that match the reference
+		// TODO: If file is sorted, can do a binary search if we have the ranges
+		// of where the refIDs start and end in the file.
 
 		while ( getline(annot, row) ) {
 			stringstream _rowElements(row);
@@ -52,28 +89,40 @@ bool BioMapper::mapFiles (string *refID) {
 			long _start = -1;
 			long _end = -1;
 			bool validMatch = false;
+
+			// Loop through each element in the row
 			while ( getline(_rowElements, _element, splitter) ) {
+
+				// Check to see if we've gotten to the chromosome column
 				if ( i == chromosomeColumn ) {
+					// Check to make sure that the reference sequence is the correct one
+					// or skip to the next row if not.
 					if ( _element.compare(_refID) == 0 ) {
 						_ref = _element;
 						validMatch = true;
 					} else {
 						break;
 					}	
-				}
-				else if (i == startColumn) {
+				} else if (i == startColumn) {
+					// Check for the start column value
+					// TODO: right now we assume it is a valid number or it returns a 0
+					// Should also check to see if the errorEnd returns to a valid string
 					char * errorEnd;
 					_start = strtol(_element.c_str(), &errorEnd, 10);
-					if ( _start > 0 ) {
-						// position is negative
+					if ( _start < 0 ) {
+						// position is negative, invalid so skip
 						validMatch = false;
 						break;
 					}
 				}
 				else if (i == endColumn) {
+					
+					// Check for the end column value
+					// TODO: right now we assume it is a valid number or it returns a 0
+					// Should also check to see if the errorEnd returns to a valid string
 					char * errorEnd;
 					_end = strtol(_element.c_str(), &errorEnd, 10);
-					if ( _end > 0 ) {
+					if ( _end < 0 ) {
 						// position negative
 						validMatch = false;
 						break;
@@ -117,6 +166,15 @@ bool BioMapper::mapFiles (string *refID) {
 		}
 	}
 
+#ifdef DEBUG
+	cout << "REF ID: " << _refID << endl;
+	for (int i = 0; i < basemap.size(); i++) {
+		bitset<64> x(basemap[i]);
+		cout << '\t' << x << endl;
+	}
+	cout << endl << endl;
+#endif
+
 return true;
 }
 
@@ -158,7 +216,7 @@ bool BioMapper::determineReferences() {
 	      		it = _refIDs.find(_element);
 	      		if ( it == _refIDs.end() ) {
 					// new element for this file
-					referenceIDs[_element].val++;
+					referenceIDs[_element]++;
 					// Should be 0 if this is the first _element added to referenceIDs
 	      		}
 	      		// If already updated referenceIDs for this _element, ignore and move to next row
