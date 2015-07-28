@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <bitset>
 
 using namespace std;
 
@@ -189,14 +190,14 @@ bool BioMapper::mapFiles (string refID) {
 			}
 		}
 		// Record bits in the main bitmap
-		for (int j = 0; j < bm->size(); j++) {
+		for (unsigned int j = 0; j < bm->size(); j++) {
 			 basemap[j] = basemap[j] & (*bm)[j];
 		}
 	}
 
 #ifdef DEBUG
 	cout << "REF ID: " << _refID << endl;
-	for (int i = 0; i < basemap.size(); i++) {
+	for (unsigned int i = 0; i < basemap.size(); i++) {
 		bitset<64> x(basemap[i]);
 		cout << '\t' << x << endl;
 	}
