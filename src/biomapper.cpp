@@ -13,7 +13,10 @@ using namespace std;
 BioMapper::BioMapper () : mappingStyle(OVERLAP), chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), fileType("csv") { }
 
 bool BioMapper::mapFiles (string refID) {
-	
+
+	#ifdef DEBUG
+		cout << "In mapFiles function" << endl;
+	#endif	
 	// Define reference for local variable, not strictly necessary
 	// but help avoid changing variable inadvertantly since passed
 	// in by reference.
@@ -142,6 +145,10 @@ bool BioMapper::mapFiles (string refID) {
 			long trueStart = -1;
 			long trueEnd = -1;		
 
+			// If end and start are reversed (end is less than the start value)
+			// correct to fix the data or user error.
+			// Initialize tmpmap vector with the size necessary (positions / 64)
+			// and set all bits off (0)
 			if (_end >= _start)
 			{
 				trueStart = _start;
@@ -154,10 +161,31 @@ bool BioMapper::mapFiles (string refID) {
 			// map is properly sized to handle this range
 			
 			for (long ii = trueStart; ii <= trueEnd; ii++) {
+				// Set the bucket that contains the position of interest
 				int64_t _bucket = ii / 64;
+				// Get the bit within the bucket for the position of interest
 				int64_t _pos = 64 - (ii % 64);
-				// set positional bit
+
+				#ifdef DEBUG
+					// Output some debugging information here if in debug mode
+					cout << "DEBUG:" << endl;
+					cout << "======" << endl;
+					cout << "Bucket #:\t" << _bucket << endl;
+					cout << "Position #:\t" << ii << "\tIn Bucket:\t" << _pos << endl;
+					bitset<64> _t((*bm)[_bucket]);
+					cout << "Bucket Before:\t" << _t << endl;
+				#endif
+
+				// Set positional bit	
 				(*bm)[_bucket] = (*bm)[_bucket] | ( i << _pos );
+
+				#ifdef DEBUG
+					bitset<64> _t2((*bm)[_bucket]);
+					cout << "Bucket After:\t" << _t2 << endl;
+					int __t;
+					cin >> __t;
+				#endif
+				
 			}
 		}
 		// Record bits in the main bitmap

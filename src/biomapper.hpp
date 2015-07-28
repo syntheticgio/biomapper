@@ -23,11 +23,12 @@ class BioMapper
 
 	  bool determineReferences();
 	  bool determineArguments(int argc, char** argv);
-	  bool mapFiles(std::string * refID);
+	  bool mapFiles(std::string refID);
 	  
 	  bool argumentCleanup ();
 	  int returnNumberOfAnnotationFiles ();
 	  
+	  std::map <std::string, int64_t> referenceIDs;
 
 	// Debugging
 	  void printFiles ();
@@ -44,7 +45,6 @@ class BioMapper
 	  std::string fileType;
 	  std::vector <std::string> annotationFiles;
 	  std::vector <std::string> headerRows;
-	  std::map <std::string, idx> referenceIDs;
 	  
 	  bool setChromosomeColumn (int column);
 	  bool setStartColumn (int column);
