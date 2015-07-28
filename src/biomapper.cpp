@@ -252,7 +252,8 @@ bool BioMapper::determineReferences() {
 	      
 	      		// Break out of loop and move to next row
 	      		break;
-	    	} 
+	    	}
+			i++; 
 		}
     }
   }
