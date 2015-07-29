@@ -11,7 +11,7 @@
 
 using namespace std;
 
-BioMapper::BioMapper () : mappingStyle(OVERLAP), chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), fileType("csv") { }
+BioMapper::BioMapper () : mappingStyle(OVERLAP), chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), fileType("csv"), zeroBased(false) { }
 
 bool BioMapper::mapFiles (string refID) {
 
@@ -163,13 +163,19 @@ bool BioMapper::mapFiles (string refID) {
 				bm.resize(bucket1 + 1, 0);
 			}
 
+			// Correct if 1 based instead of 0 based
+			if (!zeroBased) {
+				trueStart--;
+				trueEnd--;
+			}
+	
 			// Map is now properly sized to handle this range
 			
 			for (long ii = trueStart; ii <= trueEnd; ii++) {
 				// Set the bucket that contains the position of interest
 				int _bucket = ii / 32;
 				// Get the bit within the bucket for the position of interest
-				int _pos = 32 - (ii % 32);
+				int _pos = 31 - (ii % 32);
 
 				// Set positional bit	
 				bm[_bucket] = bm[_bucket] | ( 1 << _pos );
@@ -190,6 +196,7 @@ bool BioMapper::mapFiles (string refID) {
 		cout << endl << endl;
 	#endif
 
+	return basemap;
 return true;
 }
 
@@ -487,7 +494,40 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 			
 		    }
 		}
-		
+		/**************************************************************
+                 * 
+                 * Check for --zeroBased / -z arguments
+                 * Default is that the annotation is 1 based.
+                 * Note: this is a flag for ALL files; all must either be 0 based or 1 based
+                 * Set with true or false
+                 * 
+                 **************************************************************/
+                 if (strcmp("--zeroBased", argv[i]) == 0 || strcmp("-z", argv[i]) == 0 ) {
+                     i++;
+                     if ( i >= argc ) {
+                         std::cout << "Zero Based flag entered but no parameter entered.  Assuming default that files are 1 based." << std::endl << std::endl;
+                         std::cerr << "WARNING: Zero Based flag entered but no parameter entered.  Assuming default that files are 1 based." << std::endl <<     std::endl;
+                         // return since i is now past the final argument
+                         return true;
+                     } else if ( strncmp(argv[i], "-", 1) == 0 ) {
+                         std::cout << "ZeroBased flag entered but no parameter entered.  Assuming default that files are 1 based." << std::endl << std::endl;
+                         std::cerr << "WARNING: ZeroBased flag entered but no parameter entered.  Assuming default that files are 1 based." << std::endl <<     std::endl;
+                     } else {
+                         std::string _tmpZero(argv[i]);
+                         std::transform(_tmpZero.begin(), _tmpZero.end(), _tmpZero.begin(), ::tolower);
+                         if ( _tmpZero.compare("true") == 0 ) {
+                            setZeroBased(true);
+                     } else if ( _tmpZero.compare("false") == 0 ) {
+                         // Set default anyway   
+			 setHeader(false);
+                     } else {
+                         // neither true or false; Aborting
+                         std::cout << "zeroBased can only be to true or false.  If no zeroBased flag is provided, the program will assume false. " << argv[i] << " was entered.  Aborting run." << endl << endl;
+                         std::cerr << "ERROR: zeroBased can only be to true or false.  If no zeroBased flag is provided, the program will assume false. " << argv[i] << " was entered.  Aborting run." << endl << endl;
+                     }
+ 
+                   }
+                }
 	}
 	
   return properArguments;
@@ -549,6 +589,11 @@ bool BioMapper::setFileType (const std::string file_type) {
 
 bool BioMapper::setHeader (bool hdr) {
   header = hdr;
+  return true;
+}
+
+bool BioMapper::setZeroBased (bool zb) {
+  zeroBased = zb;
   return true;
 }
 

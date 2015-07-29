@@ -20,10 +20,10 @@ class BioMapper
 	public:
 		
 	  BioMapper();
-
+	
 	  bool determineReferences();
 	  bool determineArguments(int argc, char** argv);
-	  bool mapFiles(std::string refID);
+	  vector <int> mapFiles(std::string refID);
 	  
 	  bool argumentCleanup ();
 	  int returnNumberOfAnnotationFiles ();
@@ -51,7 +51,9 @@ class BioMapper
 	  bool setEndColumn (int column);
 	  bool setFileType (const std::string file_type);
 	  bool setHeader (bool hdr);
-	  
+	  bool zeroBased;
+	  bool setZeroBased (bool zb);
+
 	  // Cleanup
 	  bool verifyEndColumn();
 	  bool setLastColumn();
