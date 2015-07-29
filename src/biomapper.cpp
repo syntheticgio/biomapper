@@ -105,6 +105,7 @@ bool BioMapper::mapFiles (string refID) {
 						_ref = _element;
 						validMatch = true;
 					} else {
+						validMatch = false;
 						break;
 					}	
 				} else if (i == startColumn) {
@@ -135,6 +136,7 @@ bool BioMapper::mapFiles (string refID) {
 				if (i >= chromosomeColumn && i >= startColumn && i >= endColumn) {
 					break;
 				}
+				i++;
 			}
 
 			if (!validMatch) continue;
@@ -152,14 +154,18 @@ bool BioMapper::mapFiles (string refID) {
 			// and set all bits off (0)
 			if (_end >= _start)
 			{
+				// This is the case where start is prior or equal to end
 				trueStart = _start;
+				trueEnd = _end;
 				tmpmap.resize(bucket2, 0);
 			} else {
-				trueEnd = _end;
+				// This is the case where start is after end (columns are mixed/reverse strand, etc)
+				trueStart = _end;
+				trueEnd = _start;
 				tmpmap.resize(bucket1, 0);
 			}
 
-			// map is properly sized to handle this range
+			// Map is now properly sized to handle this range
 			
 			for (long ii = trueStart; ii <= trueEnd; ii++) {
 				// Set the bucket that contains the position of interest
@@ -173,16 +179,17 @@ bool BioMapper::mapFiles (string refID) {
 					cout << "======" << endl;
 					cout << "Bucket #:\t" << _bucket << endl;
 					cout << "Position #:\t" << ii << "\tIn Bucket:\t" << _pos << endl;
-					bitset<64> _t((*bm)[_bucket]);
-					cout << "Bucket Before:\t" << _t << endl;
+					//bitset<64> _t((*bm)[_bucket]);
+					//cout << "Bucket Before:\t" << _t << endl;
 				#endif
 
 				// Set positional bit	
-				(*bm)[_bucket] = (*bm)[_bucket] | ( i << _pos );
+				(*bm)[_bucket] = (*bm)[_bucket] | ( 1 << _pos );
 
 				#ifdef DEBUG
-					bitset<64> _t2((*bm)[_bucket]);
-					cout << "Bucket After:\t" << _t2 << endl;
+					//bitset<64> _t2((*bm)[_bucket]);
+					//cout << "Bucket After:\t" << _t2 << endl;
+					cout << endl << endl << "Enter Number: ";
 					int __t;
 					cin >> __t;
 				#endif
@@ -235,26 +242,32 @@ bool BioMapper::determineReferences() {
 	    splitter = '\t';
 	}
     while ( std::getline(annot, row) ) {
-		std::stringstream _rowElements(row);
-		std::string _element;
-		int i = 1;
+	std::stringstream _rowElements(row);
+	std::string _element;
+	auto i = 1;
 	
-		while ( std::getline(_rowElements, _element, splitter) ) {
-	   		if ( i == chromosomeColumn ) {
-	      		std::map <std::string, bool>::iterator it;
-	      		it = _refIDs.find(_element);
+	while ( std::getline(_rowElements, _element, splitter) ) {
+		if ( i == chromosomeColumn ) {
+	      		//std::map <std::string, bool>::iterator it;
+	      		auto it = _refIDs.find(_element);
 	      		if ( it == _refIDs.end() ) {
-					// new element for this file
+				// New element for this file
+				_refIDs[_element] == 1;
+				// Element should either have null in it or some number
+				// If the element has something in it, increase the number
+				// else set it to 1.
+				if (referenceIDs[_element]) {
 					referenceIDs[_element]++;
-					// Should be 0 if this is the first _element added to referenceIDs
-	      		}
+				} else {
+					referenceIDs[_element] = 1;
+				}
+	      		} 
 	      		// If already updated referenceIDs for this _element, ignore and move to next row
-	      
 	      		// Break out of loop and move to next row
 	      		break;
 	    	}
-			i++; 
-		}
+		i++; 
+	}
     }
   }
 

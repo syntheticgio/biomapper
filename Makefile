@@ -21,6 +21,19 @@ debug: CFLAGS += -g -Wall
 debug: CXXFLAGS = -DDEBUG
 debug: compile
 
+# Raspberry pi
+# 'make raspberry'
+raspberry: CC = g++-4.9
+raspberry: CFLAGS += -g -Wall -gdwarf-3
+raspberry: CXXFLAGS = -DDEBUG
+raspberry: compile
+
+# OSX
+# 'make osx'
+osx: CFLAGS += -g -Wall -gdwarf-3
+osx: CXXFLAGS = -DDEBUG
+osx: compile
+
 # Support functions
 compile: main.o biomapper.o
 	$(CC) $(CFLAGS) -o bin/$(TARGET) src/main.o src/biomapper.o $(CXXFLAGS)
