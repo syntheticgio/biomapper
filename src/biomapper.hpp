@@ -6,12 +6,12 @@
 #define __BIOMAPPER_HPP_INCLUDED__
 
 enum CrossMapType { OVERLAP, EXCLUSIVE };
-class idx
-{
-public:
-  idx () : val(0) { };
-  int64_t val;
-};
+//class idx
+//{
+//public:
+//  idx () : val(0) { };
+//  int64_t val;
+//};
 
 
 class BioMapper
@@ -28,7 +28,7 @@ class BioMapper
 	  bool argumentCleanup ();
 	  int returnNumberOfAnnotationFiles ();
 	  
-	  std::map <std::string, int64_t> referenceIDs;
+	  std::map <std::string, int> referenceIDs;
 
 	// Debugging
 	  void printFiles ();

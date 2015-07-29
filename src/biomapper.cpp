@@ -41,12 +41,11 @@ bool BioMapper::mapFiles (string refID) {
 	 * do not need to be the same, only exist at the same position).
 	 * Partial overlaps are allowed
 	 */
-	vector <int64_t> basemap;
-	vector <int64_t> tmpmap;
+	vector <int> basemap;
+	vector <int> tmpmap;
 
 	// Loop through each annotation file and compare position mapping culmatively
 	for (int i = 0; i < annotationFileNumber; i++) {
-		vector <int64_t> * bm;
 		/* 
 		 * Set proper map (base or tmp map)
 		 * If it is the first time through the loop we make a pointer to
@@ -58,8 +57,7 @@ bool BioMapper::mapFiles (string refID) {
 		 * and ignore those positions that by definition cannot satisfy the
  		 * mapping criteria.
 		 */
-		if (i == 0) bm = &basemap;
-		else bm = &tmpmap;
+		vector <int>& bm = (i == 0) ? basemap : tmpmap;
 
 		ifstream annot;
 		annot.open(annotationFiles[i]); // Open the current annotation file
@@ -143,8 +141,8 @@ bool BioMapper::mapFiles (string refID) {
 
 			// Have row details here, set bits
 			// Need to make sure map size is appropriate.
-			int64_t bucket1 = _start / 64;
-			int64_t bucket2 = _end / 64;
+			int bucket1 = _start / 32;
+			int bucket2 = _end / 32;
 			long trueStart = -1;
 			long trueEnd = -1;		
 
@@ -157,59 +155,40 @@ bool BioMapper::mapFiles (string refID) {
 				// This is the case where start is prior or equal to end
 				trueStart = _start;
 				trueEnd = _end;
-				tmpmap.resize(bucket2, 0);
+				bm.resize(bucket2 + 1, 0);
 			} else {
 				// This is the case where start is after end (columns are mixed/reverse strand, etc)
 				trueStart = _end;
 				trueEnd = _start;
-				tmpmap.resize(bucket1, 0);
+				bm.resize(bucket1 + 1, 0);
 			}
 
 			// Map is now properly sized to handle this range
 			
 			for (long ii = trueStart; ii <= trueEnd; ii++) {
 				// Set the bucket that contains the position of interest
-				int64_t _bucket = ii / 64;
+				int _bucket = ii / 32;
 				// Get the bit within the bucket for the position of interest
-				int64_t _pos = 64 - (ii % 64);
-
-				#ifdef DEBUG
-					// Output some debugging information here if in debug mode
-					cout << "DEBUG:" << endl;
-					cout << "======" << endl;
-					cout << "Bucket #:\t" << _bucket << endl;
-					cout << "Position #:\t" << ii << "\tIn Bucket:\t" << _pos << endl;
-					//bitset<64> _t((*bm)[_bucket]);
-					//cout << "Bucket Before:\t" << _t << endl;
-				#endif
+				int _pos = 32 - (ii % 32);
 
 				// Set positional bit	
-				(*bm)[_bucket] = (*bm)[_bucket] | ( 1 << _pos );
-
-				#ifdef DEBUG
-					//bitset<64> _t2((*bm)[_bucket]);
-					//cout << "Bucket After:\t" << _t2 << endl;
-					cout << endl << endl << "Enter Number: ";
-					int __t;
-					cin >> __t;
-				#endif
-				
+				bm[_bucket] = bm[_bucket] | ( 1 << _pos );
 			}
 		}
 		// Record bits in the main bitmap
-		for (unsigned int j = 0; j < bm->size(); j++) {
-			 basemap[j] = basemap[j] & (*bm)[j];
+		for (unsigned int j = 0; j < bm.size(); j++) {
+			 basemap[j] = basemap[j] & bm[j];
 		}
 	}
 
-#ifdef DEBUG
-	cout << "REF ID: " << _refID << endl;
-	for (unsigned int i = 0; i < basemap.size(); i++) {
-		bitset<64> x(basemap[i]);
-		cout << '\t' << x << endl;
-	}
-	cout << endl << endl;
-#endif
+	#ifdef DEBUG
+		cout << "REF ID: " << _refID << endl;
+		for (unsigned int i = 0; i < basemap.size(); i++) {
+			bitset<32> x(basemap[i]);
+			cout << (i*32+1) << '\t' << x << '\t'<< ((i+1)*32) << endl;
+		}
+		cout << endl << endl;
+	#endif
 
 return true;
 }
