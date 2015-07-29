@@ -2,7 +2,7 @@
 CC = g++
 
 # Compiler flags
-CFLAGS = -std=c++11
+CFLAGS = -pthread -std=c++11
 
 # the build target executable
 TARGET = biomapper

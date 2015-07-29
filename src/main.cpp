@@ -1,8 +1,12 @@
 #include "biomapper.hpp"
 #include <string>
 #include <iostream>
+#include <vector>
+#include <thread>
 
 using namespace std;
+
+void _debugThreading ();
 
 int main (int argc, char* argv[])
 {
@@ -54,16 +58,29 @@ int main (int argc, char* argv[])
 		cout << "Number of Files: " << numberOfFiles << endl;
 		cout << "Number of references: " << myMap.referenceIDs.size() << endl;
 	#endif
+
+	#ifdef DEBUG
+		cout << endl << "Verify Threading works:";
+		cout << endl << "=======================" << endl;
+		std::thread t(_debugThreading);
+		t.join();
+	#endif
 	
 	for (auto& refIDs : myMap.referenceIDs) {
 		#ifdef DEBUG
 			cout << refIDs.first << " has " << refIDs.second << " file hits." << endl;
 		#endif
 		if (refIDs.second == myMap.returnNumberOfAnnotationFiles()) {
-			bool _res = myMap.mapFiles(refIDs.first);
+			vector <int> basemap;
+			bool _res = myMap.mapFiles(refIDs.first, basemap);
 			cout << "The result for " << refIDs.first << " is " << _res << endl;
 		}
 	}	
 	
 	
+}
+
+
+void _debugThreading () {
+	cout << "Hello World!" << endl;
 }

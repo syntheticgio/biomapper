@@ -13,7 +13,7 @@ using namespace std;
 
 BioMapper::BioMapper () : mappingStyle(OVERLAP), chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), fileType("csv"), zeroBased(false) { }
 
-bool BioMapper::mapFiles (string refID) {
+bool BioMapper::mapFiles (string refID, vector <int> & basemap) {
 
 	#ifdef DEBUG
 		cout << "In mapFiles function" << endl;
@@ -29,7 +29,7 @@ bool BioMapper::mapFiles (string refID) {
 		#ifdef DEBUG
 			cout << "Reference " << _refID << " not found in all files" << endl;
 		#endif
-		return false;
+		return 0 ;
 	}
 	
 	/*
@@ -41,7 +41,7 @@ bool BioMapper::mapFiles (string refID) {
 	 * do not need to be the same, only exist at the same position).
 	 * Partial overlaps are allowed
 	 */
-	vector <int> basemap;
+	//vector <int> basemap;
 	vector <int> tmpmap;
 
 	// Loop through each annotation file and compare position mapping culmatively
@@ -59,8 +59,10 @@ bool BioMapper::mapFiles (string refID) {
 		 */
 		vector <int>& bm = (i == 0) ? basemap : tmpmap;
 
+		// Open current annotatoin file
+		// std::ifstream::in tag redundant; but just incase ifstream changes in the future include it
 		ifstream annot;
-		annot.open(annotationFiles[i]); // Open the current annotation file
+		annot.open(annotationFiles[i], std::ifstream::in);
 
 		string row;
 		
@@ -194,10 +196,12 @@ bool BioMapper::mapFiles (string refID) {
 			cout << (i*32+1) << '\t' << x << '\t'<< ((i+1)*32) << endl;
 		}
 		cout << endl << endl;
+		cout << "Now returning the vector back to the main function." << endl << endl;
 	#endif
 
-	return basemap;
+
 return true;
+
 }
 
 bool BioMapper::determineReferences() {
@@ -462,72 +466,26 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 		
 		/**************************************************************
 		* 
-		* Check for --header / -h arguments
+		* Check for --no_header / -h arguments
 		* Default is that annotation files have headers.
 		* Note: this is a flag for ALL files; all must either have headers or no headers
-		* Set with true or false
+		* If you set flag, you are specifying that the files do not have headers
 		* 
 		**************************************************************/
-		if (strcmp("--header", argv[i]) == 0 || strcmp("-h", argv[i]) == 0 ) {
-		    i++;
-		    if ( i >= argc ) {
-			std::cout << "Header flag entered but no parameter entered.  Assuming default of files all having a header." << std::endl << std::endl;
-			std::cerr << "WARNING: Header flag entered but no parameter entered.  Assuming default of files all having a header." << std::endl << std::endl; 
-			// return since i is now past the final argument
-			return true;
-		    } else if ( strncmp(argv[i], "-", 1) == 0 ) {
-			std::cout << "Header flag entered but no parameter entered.  Assuming default of files all having a header." << std::endl << std::endl;
-			std::cerr << "WARNING: Header flag entered but no parameter entered.  Assuming default of files all having a header." << std::endl << std::endl; 
-		    } else {
-			std::string _tmpHeader(argv[i]);
-			std::transform(_tmpHeader.begin(), _tmpHeader.end(), _tmpHeader.begin(), ::tolower);
-		      if ( _tmpHeader.compare("true") == 0 ) {
-			// This is the default, but set anyway
-			setHeader(true);
-		      } else if ( _tmpHeader.compare("false") == 0 ) {
-			setHeader(false);
-		      } else {
-			// neither true or false; Aborting
-			std::cout << "Header can only be to true or false.  If no header flag is provided, the program will assume true. " << argv[i] << " was entered.  Aborting run." << endl << endl;
-			std::cerr << "ERROR: Header can only be to true or false.  If no header flag is provided, the program will assume true. " << argv[i] << " was entered.  Aborting run." << endl << endl;
-		      }
-			
-		    }
+		if (strcmp("--no_header", argv[i]) == 0 || strcmp("-h", argv[i]) == 0 ) {
+			setHeader(false);			
 		}
 		/**************************************************************
                  * 
-                 * Check for --zeroBased / -z arguments
+                 * Check for --zero_based / -z arguments
                  * Default is that the annotation is 1 based.
                  * Note: this is a flag for ALL files; all must either be 0 based or 1 based
-                 * Set with true or false
+                 * Setting this flag specifies that the files are 0 based
                  * 
                  **************************************************************/
-                 if (strcmp("--zeroBased", argv[i]) == 0 || strcmp("-z", argv[i]) == 0 ) {
-                     i++;
-                     if ( i >= argc ) {
-                         std::cout << "Zero Based flag entered but no parameter entered.  Assuming default that files are 1 based." << std::endl << std::endl;
-                         std::cerr << "WARNING: Zero Based flag entered but no parameter entered.  Assuming default that files are 1 based." << std::endl <<     std::endl;
-                         // return since i is now past the final argument
-                         return true;
-                     } else if ( strncmp(argv[i], "-", 1) == 0 ) {
-                         std::cout << "ZeroBased flag entered but no parameter entered.  Assuming default that files are 1 based." << std::endl << std::endl;
-                         std::cerr << "WARNING: ZeroBased flag entered but no parameter entered.  Assuming default that files are 1 based." << std::endl <<     std::endl;
-                     } else {
-                         std::string _tmpZero(argv[i]);
-                         std::transform(_tmpZero.begin(), _tmpZero.end(), _tmpZero.begin(), ::tolower);
-                         if ( _tmpZero.compare("true") == 0 ) {
-                            setZeroBased(true);
-                     } else if ( _tmpZero.compare("false") == 0 ) {
-                         // Set default anyway   
-			 setHeader(false);
-                     } else {
-                         // neither true or false; Aborting
-                         std::cout << "zeroBased can only be to true or false.  If no zeroBased flag is provided, the program will assume false. " << argv[i] << " was entered.  Aborting run." << endl << endl;
-                         std::cerr << "ERROR: zeroBased can only be to true or false.  If no zeroBased flag is provided, the program will assume false. " << argv[i] << " was entered.  Aborting run." << endl << endl;
-                     }
- 
-                   }
-                }
+                 if (strcmp("--zero_based", argv[i]) == 0 || strcmp("-z", argv[i]) == 0 ) {
+                     setZeroBased(true);
+                 }
 	}
 	
   return properArguments;
