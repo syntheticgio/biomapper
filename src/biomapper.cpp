@@ -8,12 +8,28 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <bitset>
+#include <thread>
 
 using namespace std;
 
-BioMapper::BioMapper () : mappingStyle(OVERLAP), chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), fileType("csv"), zeroBased(false) { }
+/*****************************************************************************************
+ * Constructor
+ ****************************************************************************************/
 
-bool BioMapper::mapFiles (string refID, vector <int> & basemap) {
+BioMapper::BioMapper () : mappingStyle(OVERLAP), chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), fileType("csv"), zeroBased(false), maximum_threads(thread::hardware_concurrency()) { }
+
+
+
+
+
+
+
+
+/*****************************************************************************************
+ * Map all files with relevant refIDs together
+ ****************************************************************************************/
+
+bool BioMapper::mapFiles (string refID) {
 
 	#ifdef DEBUG
 		cout << "In mapFiles function" << endl;
@@ -41,7 +57,7 @@ bool BioMapper::mapFiles (string refID, vector <int> & basemap) {
 	 * do not need to be the same, only exist at the same position).
 	 * Partial overlaps are allowed
 	 */
-	//vector <int> basemap;
+	vector <int> basemap;
 	vector <int> tmpmap;
 
 	// Loop through each annotation file and compare position mapping culmatively
@@ -187,6 +203,8 @@ bool BioMapper::mapFiles (string refID, vector <int> & basemap) {
 		for (unsigned int j = 0; j < bm.size(); j++) {
 			 basemap[j] = basemap[j] & bm[j];
 		}
+
+		annot.close();
 	}
 
 	#ifdef DEBUG
@@ -198,11 +216,29 @@ bool BioMapper::mapFiles (string refID, vector <int> & basemap) {
 		cout << endl << endl;
 		cout << "Now returning the vector back to the main function." << endl << endl;
 	#endif
+	
+	ofstream refIDOutputFile;
+	string __refID = "tmp/__tmp__" + refID;
+	refIDOutputFile.open(__refID, ios::binary);
+	
+	for (unsigned int i = 0; i < basemap.size(); i++) {
+		refIDOutputFile << basemap[i];
+	}
 
-
-return true;
-
+   return true;
 }
+
+
+
+
+
+
+
+
+
+/****************************************************************************************
+ * Determine important variables
+ ***************************************************************************************/
 
 bool BioMapper::determineReferences() {
 
@@ -491,6 +527,48 @@ bool BioMapper::determineArguments(int argc, char** argv) {
   return properArguments;
 }
 
+
+
+
+
+
+
+
+
+
+/*************************************************************************
+ * Threading Library
+ ************************************************************************/
+
+
+void BioMapper::launchThreads() {
+	vector <thread> threads;
+
+	// Generate one thread for each refID that matches criteria (all files have it)
+        for (auto& refIDs : referenceIDs) {
+                if (refIDs.second == returnNumberOfAnnotationFiles()) {
+                        threads.push_back(thread(&BioMapper::mapFiles,this,refIDs.first));
+                }
+        }
+
+        // Join all threads in turn
+        for_each(threads.begin(), threads.end(),mem_fn(&thread::join));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/*****************************************************************************************
+ * Cleanup
+ ****************************************************************************************/
 bool BioMapper::argumentCleanup () {
   bool vec = verifyEndColumn();
   bool slc = setLastColumn();
@@ -526,6 +604,16 @@ bool BioMapper::setLastColumn() {
   
   return true;
 }
+
+
+
+
+ 
+
+ 
+/*****************************************************************************************
+ * Setters
+ ****************************************************************************************/
 
 bool BioMapper::setChromosomeColumn (int column) {
     chromosomeColumn = column;

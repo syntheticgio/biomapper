@@ -23,11 +23,13 @@ class BioMapper
 	
 	  bool determineReferences();
 	  bool determineArguments(int argc, char** argv);
-	  bool mapFiles(std::string refID, std::vector <int> & basemap);
-	  
+	  bool mapFiles(std::string refID);
+	  void launchThreads();	
+
 	  bool argumentCleanup ();
 	  int returnNumberOfAnnotationFiles ();
-	  
+		 
+ 
 	  std::map <std::string, int> referenceIDs;
 
 	// Debugging
@@ -47,7 +49,8 @@ class BioMapper
 	  	std::vector <std::string> annotationFiles;
 	  	std::vector <std::string> headerRows;
 	  	bool zeroBased;
-
+		const int maximum_threads;
+	
 		// Class setters
 		bool setChromosomeColumn (int column);
 		bool setStartColumn (int column);

@@ -6,14 +6,16 @@
 
 using namespace std;
 
-void _debugThreading ();
+// DEBUG
+void _debugThreading (string refID);
+//
 
 int main (int argc, char* argv[])
 {
 
-#ifdef DEBUG
-	cout << "\n\nDebug works\n\n";
-#endif
+	#ifdef DEBUG
+		cout << endl << endl << "Debug Is Set" << endl << endl;
+	#endif
 
 	BioMapper myMap;
 	bool validateArguments = myMap.determineArguments(argc, argv);
@@ -62,25 +64,31 @@ int main (int argc, char* argv[])
 	#ifdef DEBUG
 		cout << endl << "Verify Threading works:";
 		cout << endl << "=======================" << endl;
-		std::thread t(_debugThreading);
+		string ts = "Test";
+		std::thread t(_debugThreading, ts);
 		t.join();
 	#endif
-	
+
+	/*
 	for (auto& refIDs : myMap.referenceIDs) {
 		#ifdef DEBUG
 			cout << refIDs.first << " has " << refIDs.second << " file hits." << endl;
 		#endif
 		if (refIDs.second == myMap.returnNumberOfAnnotationFiles()) {
-			vector <int> basemap;
-			bool _res = myMap.mapFiles(refIDs.first, basemap);
+			//vector <int> basemap;
+			std::thread 
+			bool _res = myMap.mapFiles(refIDs.first);
 			cout << "The result for " << refIDs.first << " is " << _res << endl;
 		}
-	}	
+	}
+	*/
+
+	myMap.launchThreads();	
 	
 	
 }
 
 
-void _debugThreading () {
-	cout << "Hello World!" << endl;
+void _debugThreading (string refID) {
+	cout << "Hi: " << refID << endl;
 }
