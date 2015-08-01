@@ -1,7 +1,19 @@
 # biomapper
-Command line software that enables two biological annotations to be mapped together for overlaps and exclusions.
+##Command line software that enables two biological annotations to be mapped together for overlaps and exclusions.
 
-USAGE:
+#WARNING: THIS SOFTWARE IS STILL IN DEVELOPMENT AND MAY NOT FUNCTION PROPERLY UNTIL THIS WARNING IS REMOVED.
+
+###TODO:
+- [ ] Multithreading
+  - [x] Add multithreading capability
+  - [ ] Allow user to select number of threads up to maximum
+  - [ ] Verify multithreading works on larger data sets
+- [ ] Output
+  - [ ] Generate generic text readable output files (currently in binary) based on the files mapped
+  - [ ] Specific flags can be provided for special mapping cases (i.e. SNVs vs. SNV dataset for exclusions, etc.)
+- [ ] Enable EXCLUSIVE (in first annotation but not in the second_
+
+###USAGE:
 
 
 biomapper --annotations <file1.csv> <file2.csv> <...> [--map_type <overlap>] [--chromosome <1>] [--start <2>] [--end <2>] [--file_type <csv>] [--zero_based] [--no_header] 
