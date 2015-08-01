@@ -17,7 +17,7 @@ using namespace std;
  * Constructor
  ****************************************************************************************/
 
-BioMapper::BioMapper () : mappingStyle(OVERLAP), chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), fileType("csv"), zeroBased(false), maximum_threads(thread::hardware_concurrency()) { }
+BioMapper::BioMapper () : chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), fileType("csv"), zeroBased(false), mappingStyle(OVERLAP), maximum_threads(thread::hardware_concurrency()) { }
 
 
 
@@ -29,7 +29,7 @@ BioMapper::BioMapper () : mappingStyle(OVERLAP), chromosomeColumn(1), startColum
 /*****************************************************************************************
  * Map all files with relevant refIDs together
  ****************************************************************************************/
-
+/*
 bool BioMapper::mapFiles (string refID) {
 
 	#ifdef DEBUG
@@ -49,31 +49,31 @@ bool BioMapper::mapFiles (string refID) {
 		return 0 ;
 	}
 	
-	/*
-	 * Declare two vectors of bits (int64_t)
-	 * Each position in the reference id will be a single bit
-	 * If the bit is turned on, there was a match with all files so far
-	 * If the bit is tunred off, at least one file had no data at that position
-	 * The content of the data doesn't matter (i.e. the annotations
-	 * do not need to be the same, only exist at the same position).
-	 * Partial overlaps are allowed
-	 */
+	//
+	// Declare two vectors of bits (int64_t)
+	// Each position in the reference id will be a single bit
+	// If the bit is turned on, there was a match with all files so far
+	// If the bit is tunred off, at least one file had no data at that position
+	// The content of the data doesn't matter (i.e. the annotations
+	// do not need to be the same, only exist at the same position).
+	// Partial overlaps are allowed
+	//
 	vector <int> basemap;
 	vector <int> tmpmap;
 
 	// Loop through each annotation file and compare position mapping culmatively
 	for (int i = 0; i < annotationFileNumber; i++) {
-		/* 
-		 * Set proper map (base or tmp map)
-		 * If it is the first time through the loop we make a pointer to
-		 * the main mapping vector - basemap.
-		 * If it any later iteration, we record the position bits for that
-		 * file in the temporary bitmap.  These two will be collapsed at the
-		 * end of the iteration.  This allows us to only carry through from
-		 * the first two iterations any positions that we know are of interest
-		 * and ignore those positions that by definition cannot satisfy the
- 		 * mapping criteria.
-		 */
+		// 
+		// Set proper map (base or tmp map)
+		// If it is the first time through the loop we make a pointer to
+		// the main mapping vector - basemap.
+		// If it any later iteration, we record the position bits for that
+		// file in the temporary bitmap.  These two will be collapsed at the
+		// end of the iteration.  This allows us to only carry through from
+		// the first two iterations any positions that we know are of interest
+		// and ignore those positions that by definition cannot satisfy the
+ 		// mapping criteria.
+		//
 		vector <int>& bm = (i == 0) ? basemap : tmpmap;
 
 		// Open current annotatoin file
@@ -229,7 +229,7 @@ bool BioMapper::mapFiles (string refID) {
    return true;
 }
 
-
+*/
 
 
 
@@ -543,21 +543,40 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 
 
 void BioMapper::launchThreads() {
+/*
+	bool done = false;
 
-	//notified = false;
+	// Generate my queue
+	std::queue<std::string> queue;
+	
+	// Create the vector of threads as a structure
+	struct : std::vector<std::thread> {
+	    void join() { for_each(begin(), end(), mem_fun_ref(&value_type::join)); }
+	} threads;
+	
+	using lock_guard = std::lock_guard<std::mutex>;
+	using unique_lock = std::unique_lock<std::mutex>;
+
+
+	bool threader(std::string);
+	threader = BioMapper::mapFiles;
+
+	//distributor<std::string> process( (threader(refIDs.first) );
 
 	//vector <thread> threads;
 
 	// Generate one thread for each refID that matches criteria (all files have it)
         for (auto& refIDs : referenceIDs) {
                 if (refIDs.second == returnNumberOfAnnotationFiles()) {
-					distributor<std::string> process( (threader(refIDs.first)) );
+
+					distributor<std::string> process( (threader(refIDs.first) );
                     //threads.push_back(thread(&BioMapper::mapFiles,this,refIDs.first));
                 }
         }
 
         // Join all threads in turn
         //for_each(threads.begin(), threads.end(),mem_fn(&thread::join));
+*/
 }
 
 

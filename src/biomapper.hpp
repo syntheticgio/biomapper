@@ -30,15 +30,6 @@ class BioMapper
 	  int returnNumberOfAnnotationFiles ();
 		 
  
-	  std::map <std::string, int> referenceIDs;
-
-	// Debugging
-	  void printFiles ();
-	  void printClassVariables ();
-	
-	private:
-	  	// Class Variables
-		CrossMapType mappingStyle;
 		int chromosomeColumn;
 	  	int startColumn;
 	  	int endColumn;
@@ -49,6 +40,15 @@ class BioMapper
 	  	std::vector <std::string> annotationFiles;
 	  	std::vector <std::string> headerRows;
 	  	bool zeroBased;
+	  std::map <std::string, int> referenceIDs;
+
+	// Debugging
+	  void printFiles ();
+	  void printClassVariables ();
+	
+	private:
+	  	// Class Variables
+		CrossMapType mappingStyle;
 		const int maximum_threads;
 	
 		// Class setters
