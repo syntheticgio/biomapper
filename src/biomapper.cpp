@@ -544,32 +544,14 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 
 void BioMapper::launchThreads() {
 
-	bool done = false;
-
-	// Generate my queue
-	std::queue<std::string> queue;
-	
-	// Create the vector of threads as a structure
-	struct : std::vector<std::thread> {
-	    void join() { for_each(begin(), end(), mem_fun_ref(&value_type::join)); }
-	} threads;
-	
-	using lock_guard = std::lock_guard<std::mutex>;
-	using unique_lock = std::unique_lock<std::mutex>;
-
-
-	bool threader(std::string);
-	threader = BioMapper::mapFiles;
-
-	//distributor<std::string> process( (threader(refIDs.first) );
+	//notified = false;
 
 	//vector <thread> threads;
 
 	// Generate one thread for each refID that matches criteria (all files have it)
         for (auto& refIDs : referenceIDs) {
                 if (refIDs.second == returnNumberOfAnnotationFiles()) {
-
-					distributor<std::string> process( (threader(refIDs.first) );
+					distributor<std::string> process( (threader(refIDs.first)) );
                     //threads.push_back(thread(&BioMapper::mapFiles,this,refIDs.first));
                 }
         }
