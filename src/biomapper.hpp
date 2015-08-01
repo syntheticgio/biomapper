@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <mutex>
 
 #ifndef __BIOMAPPER_HPP_INCLUDED__
 #define __BIOMAPPER_HPP_INCLUDED__
@@ -20,6 +21,8 @@ class BioMapper
 	public:
 		
 	  BioMapper();
+	  
+	  std::mutex mtx;
 	
 	  bool determineReferences();
 	  bool determineArguments(int argc, char** argv);

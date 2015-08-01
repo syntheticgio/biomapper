@@ -92,6 +92,8 @@ int main (int argc, char* argv[])
 	    thrds.push_back( std::thread(mapFiles, std::ref(myMap)) );
 	}
 	
+	std::cout << "Wait for threads to join" << std::endl << std::endl;
+	
 	// Wait for all threads to finish
 	for (auto& th: thrds) th.join();
 	
@@ -120,18 +122,23 @@ int main (int argc, char* argv[])
 void mapFiles (BioMapper& myMap) {
   std::string refID;
   
-  m.lock();
-  if (myMap.threads.empty()) {
-    #ifdef DEBUG
-      std::cout << "No more threads, exiting function." << std::endl;
-    #endif
-    return;
+  //std::unique_lock<std::mutex> lck(m);
+  //std::lock(m);
+  {
+    std::lock_guard<std::mutex> lock(m);
+    if (myMap.threads.empty()) {
+      #ifdef DEBUG
+	std::cout << "No more threads, exiting function." << std::endl;
+      #endif
+      return;
+    }
+    else {
+      refID=myMap.threads.back();
+      myMap.threads.pop_back();
+    }
   }
-  else {
-    refID=myMap.threads.back();
-    myMap.threads.pop_back();
-  }
-  m.unlock();
+  //m.unlock();
+  //std::unlock(m);
   
         #ifdef DEBUG
                 std::cout << "In mapFiles function" << std::endl;
