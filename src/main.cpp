@@ -6,25 +6,30 @@
 #include <bitset>
 #include <vector>
 #include <thread>
+#include <mutex>
 
 using namespace std;
 
 void _debugThreading ();
 
-bool mapFiles (string refID, BioMapper& myMap);
+void mapFiles (BioMapper& myMap);
+
+// Create mutex
+std::mutex m;
+
 
 int main (int argc, char* argv[])
 {
 
-#ifdef DEBUG
-	cout << "\n\nDebug works\n\n";
-#endif
+  #ifdef DEBUG
+	std::cout << "\n\nDebug works\n\n";
+  #endif
 
 	BioMapper myMap;
 	bool validateArguments = myMap.determineArguments(argc, argv);
 	if (!validateArguments) {
-	    cout << "Invalid arguments used. See error file for more information." << endl << endl;
-	    cerr << "ERROR: Invalid Arguments used." << endl << endl;
+	    std::cout << "Invalid arguments used. See error file for more information." << std::endl << std::endl;
+	    std::cerr << "ERROR: Invalid Arguments used." << std::endl << std::endl;
 	    return 0;
 	}
 
@@ -32,7 +37,7 @@ int main (int argc, char* argv[])
 	// TODO: This, validateArguments, and argumentCleanup should be in a single function.
 	bool _detRefs = myMap.determineReferences();
 	if (!_detRefs) {
-		cout << "DetermineReferences() failed" << endl;
+		std::cout << "DetermineReferences() failed" << std::endl;
 	}
 	
 	// Verify end column number and set if needed (since this may or may not be passed in as an argument)
@@ -40,13 +45,12 @@ int main (int argc, char* argv[])
 	bool argumentCleanup = myMap.argumentCleanup();
 	
 	if (!argumentCleanup) {
-	 cout << "Invalid arguments cleanup. See error file for more information." << endl << endl;
-	 cerr << "ERROR: Invalid arguments cleanup." << endl << endl;
+	 std::cout << "Invalid arguments cleanup. See error file for more information." << std::endl << std::endl;
+	 std::cerr << "ERROR: Invalid arguments cleanup." << std::endl << std::endl;
 	 return 0;
 	}
 	
 	#ifdef DEBUG
-		//myMap.printFiles();
 		myMap.printClassVariables();
 	#endif
 	
@@ -55,53 +59,95 @@ int main (int argc, char* argv[])
 	// Need to determine references and make sure they match
 	// Include 'smart' reference matching flag?
 
-	// Loop through
-	// mapFiles(&refID)
-	//	
 	#ifdef DEBUG
 		int numberOfFiles = myMap.returnNumberOfAnnotationFiles();
-		cout << "Number of Files: " << numberOfFiles << endl;
-		cout << "Number of references: " << myMap.referenceIDs.size() << endl;
+		std::cout << "Number of Files: " << numberOfFiles << std::endl;
+		std::cout << "Number of references: " << myMap.referenceIDs.size() << std::endl;
 	#endif
 
+	/*
 	#ifdef DEBUG
-		cout << endl << "Verify Threading works:";
-		cout << endl << "=======================" << endl;
+		std::cout << std::endl << "Verify Threading works:";
+		std::cout << std::endl << "=======================" << std::endl;
 		std::thread t(_debugThreading);
 		t.join();
 	#endif
+	*/
 	
+	int max_threads = std::thread::hardware_concurrency();
+	if ((max_threads - 1) <= 1) {
+	  max_threads = 2;
+	} else {
+	   max_threads--;
+	}
+	
+	#ifdef DEBUG
+	  std::cout << "hardware_condurrency() = " << std::thread::hardware_concurrency() << std::endl;
+	  std::cout << "max_threads = " << max_threads << std::endl;
+	#endif
+	
+	std::vector <std::thread> thrds;
+	
+	for (int i = 0; i < max_threads; i++) {
+	    thrds.push_back( std::thread(mapFiles, std::ref(myMap)) );
+	}
+	
+	// Wait for all threads to finish
+	for (auto& th: thrds) th.join();
+	
+	std::cout << "All threads have finished" << std::endl << std::endl;
+	
+	
+	/*	
 	for (auto& refIDs : myMap.referenceIDs) {
 		#ifdef DEBUG
-			cout << refIDs.first << " has " << refIDs.second << " file hits." << endl;
+			std::cout << refIDs.first << " has " << refIDs.second << " file hits." << std::endl;
 		#endif
 		if (refIDs.second == myMap.returnNumberOfAnnotationFiles()) {
-			//vector <int> basemap;
-			bool _res = mapFiles(refIDs.first, myMap);
-			cout << "The result for " << refIDs.first << " is " << _res << endl;
+			// Need to launch threads
+			std::thread _tmp (mapFiles, refIDs.first);
+		    
+			//bool _res = mapFiles(refIDs.first, myMap);
+			cout << "Launched Thread for " << refIDs.first endl;
 		}
-	}	
+	}
+	*/
 	
 	
 }
 
-bool mapFiles (string refID, BioMapper& myMap) {
 
+void mapFiles (BioMapper& myMap) {
+  std::string refID;
+  
+  m.lock();
+  if (myMap.threads.empty()) {
+    #ifdef DEBUG
+      std::cout << "No more threads, exiting function." << std::endl;
+    #endif
+    return;
+  }
+  else {
+    refID=myMap.threads.back();
+    myMap.threads.pop_back();
+  }
+  m.unlock();
+  
         #ifdef DEBUG
-                cout << "In mapFiles function" << endl;
+                std::cout << "In mapFiles function" << std::endl;
         #endif  
         // Define reference for local variable, not strictly necessary
         // but help avoid changing variable inadvertantly since passed
         // in by reference.
-        string _refID = refID;
+        std::string _refID = refID;
         
         // Check to see if the reference exists in the map generated earlier
         // If reference is not in the reference set, then there is 
         if ( myMap.referenceIDs[_refID] != myMap.annotationFileNumber ) {
                 #ifdef DEBUG
-                        cout << "Reference " << _refID << " not found in all files" << endl;
+                        std::cout << "Reference " << _refID << " not found in all files" << std::endl;
                 #endif
-                return 0 ;
+                return ;
         }
         
         //
@@ -263,24 +309,36 @@ bool mapFiles (string refID, BioMapper& myMap) {
         }
 
         #ifdef DEBUG
-                cout << "REF ID: " << _refID << endl;
+                std::cout << "REF ID: " << _refID << std::endl;
                 for (unsigned int i = 0; i < basemap.size(); i++) {
-                        bitset<32> x(basemap[i]);
-                        cout << (i*32+1) << '\t' << x << '\t'<< ((i+1)*32) << endl;
+                        std::bitset<32> x(basemap[i]);
+                        std::cout << (i*32+1) << '\t' << x << '\t'<< ((i+1)*32) << std::endl;
                 }
-                cout << endl << endl;
-                cout << "Now returning the vector back to the main function." << endl << endl;
+                std::cout << std::endl << std::endl;
         #endif
         
-        ofstream refIDOutputFile;
-        string __refID = "tmp/__tmp__" + refID;
+        std::ofstream refIDOutputFile;
+        std::string __refID = "__tmp__" + refID + ".dat";
+	#ifdef DEBUG
+	   std::cout << "Writing to file: " << __refID << std::endl;
+	   std::cout << "basemap size: " << basemap.size() << std::endl;
+	#endif
         refIDOutputFile.open(__refID, ios::binary);
         
         for (unsigned int i = 0; i < basemap.size(); i++) {
                 refIDOutputFile << basemap[i];
         }
-
-   return true;
+        
+        refIDOutputFile.close();
+        
+#ifdef DEBUG
+  std::cout << "Finished thread, launching new one if needed." << std::endl;
+#endif
+  
+  // Recursive; keep calling self until all threads are exhausted
+  mapFiles(myMap);
+  
+  return ;
 }
 
 

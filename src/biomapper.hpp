@@ -30,18 +30,18 @@ class BioMapper
 	  int returnNumberOfAnnotationFiles ();
 		 
  
-		int chromosomeColumn;
-	  	int startColumn;
-	  	int endColumn;
-	  	int lastColumn;
-	  	bool header;
-	  	int annotationFileNumber;
-	  	std::string fileType;
-	  	std::vector <std::string> annotationFiles;
-	  	std::vector <std::string> headerRows;
-	  	bool zeroBased;
+	  int chromosomeColumn;
+	  int startColumn;
+	  int endColumn;
+	  int lastColumn;
+	  bool header;
+	  int annotationFileNumber;
+	  std::string fileType;
+	  std::vector <std::string> annotationFiles;
+	  std::vector <std::string> headerRows;
+	  bool zeroBased;
 	  std::map <std::string, int> referenceIDs;
-
+	  std::vector <std::string> threads;
 	// Debugging
 	  void printFiles ();
 	  void printClassVariables ();

@@ -298,7 +298,16 @@ bool BioMapper::determineReferences() {
     }
   }
 
+  // Copy refIDs into threads
+  
+  for (auto& refID_threads : referenceIDs) {
+	if (refID_threads.second == returnNumberOfAnnotationFiles()) {
+	  threads.push_back(refID_threads.first);
+	}
+  }	
+  
   // referenceIDs has all references along with number of occurences 
+  // threads vector is set up.
   return true;
   
 }
