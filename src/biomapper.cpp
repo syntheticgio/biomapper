@@ -9,6 +9,7 @@
 #include <inttypes.h>
 #include <bitset>
 #include <thread>
+#include "distributor.hpp"
 
 using namespace std;
 
@@ -542,17 +543,25 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 
 
 void BioMapper::launchThreads() {
-	vector <thread> threads;
+
+	bool (*threader)(std::string);
+	threader = BioMapper::mapFiles;
+
+	//distributor<std::string> process( (threader(refIDs.first) );
+
+	//vector <thread> threads;
 
 	// Generate one thread for each refID that matches criteria (all files have it)
         for (auto& refIDs : referenceIDs) {
                 if (refIDs.second == returnNumberOfAnnotationFiles()) {
-                        threads.push_back(thread(&BioMapper::mapFiles,this,refIDs.first));
+
+					distributor<std::string> process( (threader(refIDs.first) );
+                    //threads.push_back(thread(&BioMapper::mapFiles,this,refIDs.first));
                 }
         }
 
         // Join all threads in turn
-        for_each(threads.begin(), threads.end(),mem_fn(&thread::join));
+        //for_each(threads.begin(), threads.end(),mem_fn(&thread::join));
 }
 
 
