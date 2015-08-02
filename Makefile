@@ -2,7 +2,7 @@
 CC = g++
 
 # Compiler flags
-CFLAGS = -pthread -std=c++11
+CFLAGS = -std=c++11
 
 # the build target executable
 TARGET = biomapper
@@ -17,7 +17,7 @@ release: compile
 
 # Debug mode
 # 'make debug'
-debug: CFLAGS += -g -Wall
+debug: CFLAGS += -pthread -g -Wall
 debug: CXXFLAGS = -DDEBUG
 debug: compile
 
@@ -30,7 +30,8 @@ raspberry: compile
 
 # OSX
 # 'make osx'
-osx: CFLAGS += -g -Wall -gdwarf-3
+osx: CC = clang++
+osx: CFLAGS += -stdlib=libc++ -g -Wall -gdwarf-3
 osx: CXXFLAGS = -DDEBUG
 osx: compile
 
