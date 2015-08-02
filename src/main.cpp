@@ -74,47 +74,25 @@ int main (int argc, char* argv[])
 	#endif
 	*/
 	
-	int max_threads = std::thread::hardware_concurrency();
-	if ((max_threads - 1) <= 1) {
-	  max_threads = 2;
-	} else {
-	   max_threads--;
-	}
-	
+
 	#ifdef DEBUG
 	  std::cout << "hardware_condurrency() = " << std::thread::hardware_concurrency() << std::endl;
-	  std::cout << "max_threads = " << max_threads << std::endl;
+	  std::cout << "max_threads = " << myMap.max_threads << std::endl;
+	  std::cout << "number of threads to use (--cpus): " << myMap.threads_to_use << std::endl;
 	#endif
 	
-	std::vector <std::thread> thrds;
+	std::vector <std::thread> allThreads;
 	
-	for (int i = 0; i < max_threads; i++) {
-	    thrds.push_back( std::thread(mapFiles, std::ref(myMap)) );
+	for (int i = 0; i < myMap.threads_to_use; i++) {
+	    allThreads.push_back( std::thread(mapFiles, std::ref(myMap)) );
 	}
 	
 	std::cout << "Wait for threads to join" << std::endl << std::endl;
 	
 	// Wait for all threads to finish
-	for (auto& th: thrds) th.join();
+	for (auto& _individualThread: allThreads) _individualThread.join();
 	
 	std::cout << "All threads have finished" << std::endl << std::endl;
-	
-	
-	/*	
-	for (auto& refIDs : myMap.referenceIDs) {
-		#ifdef DEBUG
-			std::cout << refIDs.first << " has " << refIDs.second << " file hits." << std::endl;
-		#endif
-		if (refIDs.second == myMap.returnNumberOfAnnotationFiles()) {
-			// Need to launch threads
-			std::thread _tmp (mapFiles, refIDs.first);
-		    
-			//bool _res = mapFiles(refIDs.first, myMap);
-			cout << "Launched Thread for " << refIDs.first endl;
-		}
-	}
-	*/
-	
 	
 }
 
@@ -309,7 +287,11 @@ void mapFiles (BioMapper& myMap) {
                 }
                 // Record bits in the main bitmap
                 for (unsigned int j = 0; j < bm.size(); j++) {
+		    if (mappingStyle == OVERLAP) {
                          basemap[j] = basemap[j] & bm[j];
+		    } else if (mappingStyle == EXCLUSIVE) {
+		         basemap[j] = basemap[j] | bm[j];
+		    }
                 }
 
                 annot.close();

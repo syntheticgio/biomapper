@@ -17,223 +17,8 @@ using namespace std;
  * Constructor
  ****************************************************************************************/
 
-BioMapper::BioMapper () : chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), fileType("csv"), zeroBased(false), mappingStyle(OVERLAP), maximum_threads(thread::hardware_concurrency()) { }
-
-
-
-
-
-
-
-
-/*****************************************************************************************
- * Map all files with relevant refIDs together
- ****************************************************************************************/
-/*
-bool BioMapper::mapFiles (string refID) {
-
-	#ifdef DEBUG
-		cout << "In mapFiles function" << endl;
-	#endif	
-	// Define reference for local variable, not strictly necessary
-	// but help avoid changing variable inadvertantly since passed
-	// in by reference.
-	string _refID = refID;
-	
-	// Check to see if the reference exists in the map generated earlier
-	// If reference is not in the reference set, then there is 
-	if ( referenceIDs[_refID] != annotationFileNumber ) {
-		#ifdef DEBUG
-			cout << "Reference " << _refID << " not found in all files" << endl;
-		#endif
-		return 0 ;
-	}
-	
-	//
-	// Declare two vectors of bits (int64_t)
-	// Each position in the reference id will be a single bit
-	// If the bit is turned on, there was a match with all files so far
-	// If the bit is tunred off, at least one file had no data at that position
-	// The content of the data doesn't matter (i.e. the annotations
-	// do not need to be the same, only exist at the same position).
-	// Partial overlaps are allowed
-	//
-	vector <int> basemap;
-	vector <int> tmpmap;
-
-	// Loop through each annotation file and compare position mapping culmatively
-	for (int i = 0; i < annotationFileNumber; i++) {
-		// 
-		// Set proper map (base or tmp map)
-		// If it is the first time through the loop we make a pointer to
-		// the main mapping vector - basemap.
-		// If it any later iteration, we record the position bits for that
-		// file in the temporary bitmap.  These two will be collapsed at the
-		// end of the iteration.  This allows us to only carry through from
-		// the first two iterations any positions that we know are of interest
-		// and ignore those positions that by definition cannot satisfy the
- 		// mapping criteria.
-		//
-		vector <int>& bm = (i == 0) ? basemap : tmpmap;
-
-		// Open current annotatoin file
-		// std::ifstream::in tag redundant; but just incase ifstream changes in the future include it
-		ifstream annot;
-		annot.open(annotationFiles[i], std::ifstream::in);
-
-		string row;
-		
-		// Remove the header if it exists
-		//TODO: We will likely want to save the header in the future for 
-		// output.
-		if (header) {
-			getline(annot, row);
-		}
-		
-		// Determine the splitting character.  By default it is a comma (,) but
-		// it can be changed here to a tab.  Other filetypes could be added here
-		// as long as theya re supported in the argument interpreting function
-		char splitter = ',';
-		if ( fileType.compare("tsv") == 0 ) {
-	    		splitter = '\t';
-		}
-
-		// assuming the file is not sorted, if sorted use different algorithm and only
-		// search only parts of the file that match the reference
-		// TODO: If file is sorted, can do a binary search if we have the ranges
-		// of where the refIDs start and end in the file.
-
-		while ( getline(annot, row) ) {
-			stringstream _rowElements(row);
-			string _element, _ref;
-			int i = 1;
-			long _start = -1;
-			long _end = -1;
-			bool validMatch = false;
-
-			// Loop through each element in the row
-			while ( getline(_rowElements, _element, splitter) ) {
-
-				// Check to see if we've gotten to the chromosome column
-				if ( i == chromosomeColumn ) {
-					// Check to make sure that the reference sequence is the correct one
-					// or skip to the next row if not.
-					if ( _element.compare(_refID) == 0 ) {
-						_ref = _element;
-						validMatch = true;
-					} else {
-						validMatch = false;
-						break;
-					}	
-				} else if (i == startColumn) {
-					// Check for the start column value
-					// TODO: right now we assume it is a valid number or it returns a 0
-					// Should also check to see if the errorEnd returns to a valid string
-					char * errorEnd;
-					_start = strtol(_element.c_str(), &errorEnd, 10);
-					if ( _start < 0 ) {
-						// position is negative, invalid so skip
-						validMatch = false;
-						break;
-					}
-				}
-				else if (i == endColumn) {
-					
-					// Check for the end column value
-					// TODO: right now we assume it is a valid number or it returns a 0
-					// Should also check to see if the errorEnd returns to a valid string
-					char * errorEnd;
-					_end = strtol(_element.c_str(), &errorEnd, 10);
-					if ( _end < 0 ) {
-						// position negative
-						validMatch = false;
-						break;
-					}
-				}
-				if (i >= chromosomeColumn && i >= startColumn && i >= endColumn) {
-					break;
-				}
-				i++;
-			}
-
-			if (!validMatch) continue;
-
-			// Have row details here, set bits
-			// Need to make sure map size is appropriate.
-			int bucket1 = _start / 32;
-			int bucket2 = _end / 32;
-			long trueStart = -1;
-			long trueEnd = -1;		
-
-			// If end and start are reversed (end is less than the start value)
-			// correct to fix the data or user error.
-			// Initialize tmpmap vector with the size necessary (positions / 64)
-			// and set all bits off (0)
-			if (_end >= _start)
-			{
-				// This is the case where start is prior or equal to end
-				trueStart = _start;
-				trueEnd = _end;
-				bm.resize(bucket2 + 1, 0);
-			} else {
-				// This is the case where start is after end (columns are mixed/reverse strand, etc)
-				trueStart = _end;
-				trueEnd = _start;
-				bm.resize(bucket1 + 1, 0);
-			}
-
-			// Correct if 1 based instead of 0 based
-			if (!zeroBased) {
-				trueStart--;
-				trueEnd--;
-			}
-	
-			// Map is now properly sized to handle this range
-			
-			for (long ii = trueStart; ii <= trueEnd; ii++) {
-				// Set the bucket that contains the position of interest
-				int _bucket = ii / 32;
-				// Get the bit within the bucket for the position of interest
-				int _pos = 31 - (ii % 32);
-
-				// Set positional bit	
-				bm[_bucket] = bm[_bucket] | ( 1 << _pos );
-			}
-		}
-		// Record bits in the main bitmap
-		for (unsigned int j = 0; j < bm.size(); j++) {
-			 basemap[j] = basemap[j] & bm[j];
-		}
-
-		annot.close();
-	}
-
-	#ifdef DEBUG
-		cout << "REF ID: " << _refID << endl;
-		for (unsigned int i = 0; i < basemap.size(); i++) {
-			bitset<32> x(basemap[i]);
-			cout << (i*32+1) << '\t' << x << '\t'<< ((i+1)*32) << endl;
-		}
-		cout << endl << endl;
-		cout << "Now returning the vector back to the main function." << endl << endl;
-	#endif
-	
-	ofstream refIDOutputFile;
-	string __refID = "tmp/__tmp__" + refID;
-	refIDOutputFile.open(__refID, ios::binary);
-	
-	for (unsigned int i = 0; i < basemap.size(); i++) {
-		refIDOutputFile << basemap[i];
-	}
-
-   return true;
-}
-
-*/
-
-
-
-
+BioMapper::BioMapper () : chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), 
+  fileType("csv"), zeroBased(false), mappingStyle(OVERLAP), threads_to_use(1), maximum_threads(std::thread::hardware_concurrency()) { }
 
 
 
@@ -522,17 +307,53 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 			setHeader(false);			
 		}
 		/**************************************************************
-                 * 
-                 * Check for --zero_based / -z arguments
-                 * Default is that the annotation is 1 based.
-                 * Note: this is a flag for ALL files; all must either be 0 based or 1 based
-                 * Setting this flag specifies that the files are 0 based
-                 * 
-                 **************************************************************/
-                 if (strcmp("--zero_based", argv[i]) == 0 || strcmp("-z", argv[i]) == 0 ) {
-                     setZeroBased(true);
-                 }
+		* 
+		* Check for --zero_based / -z arguments
+		* Default is that the annotation is 1 based.
+		* Note: this is a flag for ALL files; all must either be 0 based or 1 based
+		* Setting this flag specifies that the files are 0 based
+		* 
+		**************************************************************/
+		if (strcmp("--zero_based", argv[i]) == 0 || strcmp("-z", argv[i]) == 0 ) {
+		    setZeroBased(true);
+		}
+		
+		/**************************************************************
+		* 
+		* Check for --cpus / -t arguments
+		* Default is same as start column if this flag isn't set.
+		* 
+		**************************************************************/
+		if (strcmp("--cpus", argv[i]) == 0 || strcmp("-t", argv[i]) == 0 ) {
+		    i++;
+		    if ( i >= argc ) {
+			std::cout << "CPUS flag entered but no parameter entered.  Assuming single thread should be used." << std::endl << std::endl;
+			std::cerr << "WARNING: CPUS flag entered but no parameter entered.  Assuming single thread should be used." << std::endl << std::endl; 
+			// return since i is now past the final argument
+			return true;
+		    } else if ( strncmp(argv[i], "-", 1) == 0 ) {
+			std::cout << "CPUS flag entered but no parameter entered.  Assuming single thread should be used." << std::endl << std::endl;
+			std::cerr << "WARNING: CPUS flag entered but no parameter entered.  Assuming single thread should be used." << std::endl << std::endl; 
+			
+		    } else if ( atoi(argv[i]) && atoi(argv[i]) > 0 ) {
+		      // Valid integer and above 0 (rounded by truncating any decimals if float entered).  
+		      bool _setThreads = setThreads( atoi(argv[i]) );
+		      if (!_setThreads) {
+			  std::cerr << "ERROR: Problem setting thread number.  Aborting run." << std::endl << std::endl;
+			  return false;
+		      }
+		    } else if ( !atoi(argv[i]) ) {
+		      // Invalid; no number entered.
+		      std::cerr << "ERROR: CPUS flag entered with parameter, but parameter is not a valid thread number.  Please enter a valid integer.  Aborting run." << std::endl << std::endl;
+		      return false;
+		    } else if ( atoi(argv[i]) < 0 ) {
+		      // Invalid; number is negative
+		      std::cerr << "ERROR: CPUS flag entered with parameter, but parameter is negative number.  Please enter a valid integer.  Aborting run." << std::endl << std::endl;		      return false;
+		    }
+		}
 	}
+	
+	
 	
   return properArguments;
 }
@@ -678,6 +499,19 @@ bool BioMapper::setZeroBased (bool zb) {
 
 int BioMapper::returnNumberOfAnnotationFiles () {
     return annotationFiles.size();
+}
+
+bool BioMapper::setThreads (unsigned int _thrds) {
+  if (_thrds <= 0) {
+      // Shouldn't get here
+    return false;
+  }
+  if (_thrds <= maximum_threads) {  
+    threads_to_use = _thrds;
+  } else {
+    threads_to_use = maximum_threads;
+  }
+    return true;
 }
 
 

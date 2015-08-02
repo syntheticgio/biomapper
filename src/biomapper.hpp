@@ -45,6 +45,8 @@ class BioMapper
 	  bool zeroBased;
 	  std::map <std::string, int> referenceIDs;
 	  std::vector <std::string> threads;
+	  unsigned int threads_to_use;
+	  
 	// Debugging
 	  void printFiles ();
 	  void printClassVariables ();
@@ -53,6 +55,7 @@ class BioMapper
 	  	// Class Variables
 		CrossMapType mappingStyle;
 		const int maximum_threads;
+		
 	
 		// Class setters
 		bool setChromosomeColumn (int column);
