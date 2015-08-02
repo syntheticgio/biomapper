@@ -39,21 +39,21 @@ int main (int argc, char* argv[])
 	if (!_detRefs) {
 		std::cout << "DetermineReferences() failed" << std::endl;
 	}
-	
+
 	// Verify end column number and set if needed (since this may or may not be passed in as an argument)
 	// Also set the last column value to speed up reference id reading.
 	bool argumentCleanup = myMap.argumentCleanup();
-	
+
 	if (!argumentCleanup) {
 	 std::cout << "Invalid arguments cleanup. See error file for more information." << std::endl << std::endl;
 	 std::cerr << "ERROR: Invalid arguments cleanup." << std::endl << std::endl;
 	 return 0;
 	}
-	
+
 	#ifdef DEBUG
 		myMap.printClassVariables();
 	#endif
-	
+
 	// Currently have files from command line
 	// also have start, end, and reference (chromosome) id columns.
 	// Need to determine references and make sure they match
@@ -73,33 +73,33 @@ int main (int argc, char* argv[])
 		t.join();
 	#endif
 	*/
-	
+
 
 	#ifdef DEBUG
 	  std::cout << "hardware_condurrency() = " << std::thread::hardware_concurrency() << std::endl;
-	  std::cout << "max_threads = " << myMap.max_threads << std::endl;
+	  std::cout << "max_threads = " << myMap.maximum_threads << std::endl;
 	  std::cout << "number of threads to use (--cpus): " << myMap.threads_to_use << std::endl;
 	#endif
-	
+
 	std::vector <std::thread> allThreads;
-	
-	for (int i = 0; i < myMap.threads_to_use; i++) {
+
+	for (unsigned int i = 0; i < myMap.threads_to_use; i++) {
 	    allThreads.push_back( std::thread(mapFiles, std::ref(myMap)) );
 	}
-	
+
 	std::cout << "Wait for threads to join" << std::endl << std::endl;
-	
+
 	// Wait for all threads to finish
 	for (auto& _individualThread: allThreads) _individualThread.join();
-	
+
 	std::cout << "All threads have finished" << std::endl << std::endl;
-	
+
 }
 
 
 void mapFiles (BioMapper& myMap) {
   std::string refID;
-  
+
   //std::unique_lock<std::mutex> lck(m);
   //std::lock(m);
   {
@@ -117,24 +117,24 @@ void mapFiles (BioMapper& myMap) {
   }
   //m.unlock();
   //std::unlock(m);
-  
+
         #ifdef DEBUG
                 std::cout << "In mapFiles function" << std::endl;
-        #endif  
+        #endif
         // Define reference for local variable, not strictly necessary
         // but help avoid changing variable inadvertantly since passed
         // in by reference.
         std::string _refID = refID;
-        
+
         // Check to see if the reference exists in the map generated earlier
-        // If reference is not in the reference set, then there is 
+        // If reference is not in the reference set, then there is
         if ( myMap.referenceIDs[_refID] != myMap.annotationFileNumber ) {
                 #ifdef DEBUG
                         std::cout << "Reference " << _refID << " not found in all files" << std::endl;
                 #endif
                 return ;
         }
-        
+
         //
         // Declare two vectors of bits (int64_t)
         // Each position in the reference id will be a single bit
@@ -143,7 +143,7 @@ void mapFiles (BioMapper& myMap) {
         // The content of the data doesn't matter (i.e. the annotations
         // do not need to be the same, only exist at the same position).
         // Partial overlaps are allowed
-         
+
         vector <int> basemap;
         vector <int> tmpmap;
 
@@ -159,7 +159,7 @@ void mapFiles (BioMapper& myMap) {
                 // the first two iterations any positions that we know are of interest
                 // and ignore those positions that by definition cannot satisfy the
                 // mapping criteria.
-                 
+
                 vector <int>& bm = (i == 0) ? basemap : tmpmap;
 
                 // Open current annotatoin file
@@ -167,15 +167,15 @@ void mapFiles (BioMapper& myMap) {
                 ifstream annot;
                 annot.open(myMap.annotationFiles[i], std::ifstream::in);
 
-                string row;
-                
+                std::string row;
+
                 // Remove the header if it exists
-                //TODO: We will likely want to save the header in the future for 
-                // output.
+                // Record it in vector/map for output
                 if (myMap.header) {
-                        getline(annot, row);
+                    getline(annot, row);
+                    myMap.headerRows.push_back(row);
                 }
-                
+
                 // Determine the splitting character.  By default it is a comma (,) but
                 // it can be changed here to a tab.  Other filetypes could be added here
                 // as long as theya re supported in the argument interpreting function
@@ -210,7 +210,7 @@ void mapFiles (BioMapper& myMap) {
                                         } else {
                                                 validMatch = false;
                                                 break;
-                                        }       
+                                        }
                                 } else if (i == myMap.startColumn) {
                                         // Check for the start column value
                                         // TODO: right now we assume it is a valid number or it returns a 0
@@ -248,7 +248,7 @@ void mapFiles (BioMapper& myMap) {
                         int bucket1 = _start / 32;
                         int bucket2 = _end / 32;
                         long trueStart = -1;
-                        long trueEnd = -1;              
+                        long trueEnd = -1;
 
                         // If end and start are reversed (end is less than the start value)
                         // correct to fix the data or user error.
@@ -272,24 +272,24 @@ void mapFiles (BioMapper& myMap) {
                                 trueStart--;
                                 trueEnd--;
                         }
-        
+
                         // Map is now properly sized to handle this range
-                        
+
                         for (long ii = trueStart; ii <= trueEnd; ii++) {
                                 // Set the bucket that contains the position of interest
                                 int _bucket = ii / 32;
                                 // Get the bit within the bucket for the position of interest
                                 int _pos = 31 - (ii % 32);
 
-                                // Set positional bit   
+                                // Set positional bit
                                 bm[_bucket] = bm[_bucket] | ( 1 << _pos );
                         }
                 }
                 // Record bits in the main bitmap
                 for (unsigned int j = 0; j < bm.size(); j++) {
-		    if (mappingStyle == OVERLAP) {
+		    if (myMap.mappingStyle == OVERLAP) {
                          basemap[j] = basemap[j] & bm[j];
-		    } else if (mappingStyle == EXCLUSIVE) {
+		    } else if (myMap.mappingStyle == EXCLUSIVE) {
 		         basemap[j] = basemap[j] | bm[j];
 		    }
                 }
@@ -305,28 +305,37 @@ void mapFiles (BioMapper& myMap) {
                 }
                 std::cout << std::endl << std::endl;
         #endif
-        
+
         std::ofstream refIDOutputFile;
         std::string __refID = "__tmp__" + refID + ".dat";
+
+    // Re-lock the data and write
+    // to the data file so we know
+    // which files to read later.
+    {
+        std::lock_guard<std::mutex> lock(m);
+        myMap.dataFiles.push_back(refID);
+    }
+
 	#ifdef DEBUG
 	   std::cout << "Writing to file: " << __refID << std::endl;
 	   std::cout << "basemap size: " << basemap.size() << std::endl;
 	#endif
-        refIDOutputFile.open(__refID, ios::binary);
-        
-        for (unsigned int i = 0; i < basemap.size(); i++) {
-                refIDOutputFile << basemap[i];
-        }
-        
-        refIDOutputFile.close();
-        
-#ifdef DEBUG
-  std::cout << "Finished thread, launching new one if needed." << std::endl;
-#endif
-  
-  // Recursive; keep calling self until all threads are exhausted
-  mapFiles(myMap);
-  
+    refIDOutputFile.open(__refID, ios::binary);
+
+    for (unsigned int i = 0; i < basemap.size(); i++) {
+        refIDOutputFile << basemap[i];
+    }
+
+    refIDOutputFile.close();
+
+    #ifdef DEBUG
+        std::cout << "Finished thread, launching new one if needed." << std::endl;
+    #endif
+
+    // Recursive; keep calling self until all threads are exhausted
+    mapFiles(myMap);
+
   return ;
 }
 

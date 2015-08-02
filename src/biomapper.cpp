@@ -17,8 +17,8 @@ using namespace std;
  * Constructor
  ****************************************************************************************/
 
-BioMapper::BioMapper () : chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), 
-  fileType("csv"), zeroBased(false), mappingStyle(OVERLAP), threads_to_use(1), maximum_threads(std::thread::hardware_concurrency()) { }
+BioMapper::BioMapper () : chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0),
+  fileType("csv"), zeroBased(false), threads_to_use(1), mappingStyle(OVERLAP), maximum_threads(std::thread::hardware_concurrency()) { }
 
 
 
@@ -29,16 +29,16 @@ BioMapper::BioMapper () : chromosomeColumn(1), startColumn(2), endColumn(-1), la
 bool BioMapper::determineReferences() {
 
   std::cout << "Determining references for crossmapping..." << endl << endl;
-  
-  
+
+
   for (std::string annotFile : annotationFiles ) {
     std::ifstream annot;
     annot.open(annotFile);
     // Read in all references as a dictionary
-    
+
     string row;
     std::map <std::string, bool> _refIDs;
-    
+
     if (header) {
       // remove first line and save for future use
       std::getline(annot, row);
@@ -48,7 +48,7 @@ bool BioMapper::determineReferences() {
       }
       headerRows.push_back(row);
     }
-    
+
 	char splitter = ',';
 	if ( fileType.compare("tsv") == 0 ) {
 	    splitter = '\t';
@@ -57,7 +57,7 @@ bool BioMapper::determineReferences() {
 	std::stringstream _rowElements(row);
 	std::string _element;
 	auto i = 1;
-	
+
 	while ( std::getline(_rowElements, _element, splitter) ) {
 		if ( i == chromosomeColumn ) {
 	      		//std::map <std::string, bool>::iterator it;
@@ -73,28 +73,28 @@ bool BioMapper::determineReferences() {
 				} else {
 					referenceIDs[_element] = 1;
 				}
-	      		} 
+	      		}
 	      		// If already updated referenceIDs for this _element, ignore and move to next row
 	      		// Break out of loop and move to next row
 	      		break;
 	    	}
-		i++; 
+		i++;
 	}
     }
   }
 
   // Copy refIDs into threads
-  
+
   for (auto& refID_threads : referenceIDs) {
 	if (refID_threads.second == returnNumberOfAnnotationFiles()) {
 	  threads.push_back(refID_threads.first);
 	}
-  }	
-  
-  // referenceIDs has all references along with number of occurences 
+  }
+
+  // referenceIDs has all references along with number of occurences
   // threads vector is set up.
   return true;
-  
+
 }
 
 bool BioMapper::determineArguments(int argc, char** argv) {
@@ -102,19 +102,19 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 	bool properArguments = true;
 	for (int i = 1; i < argc; i++) {
 	  	/**************************************************************
-		* 
+		*
 		* Check for --annotations / -a arguments
 		* Two or more file need to be provided
-		* 
+		*
 		**************************************************************/
-	
+
 		if (strcmp("--annotations", argv[i]) == 0 || strcmp("-a", argv[i]) == 0 ) {
 			i++;
 			if (i >= argc) {
 			    std::cerr << "ERROR: No annotation files following the --annotations/-a flag." << std::endl << std::endl;
 			    return false;
 			}
-			
+
 			while (strncmp(argv[i], "-", 1) != 0) {
 				annotationFiles.push_back(argv[i]);
 				std::cout << "Loading file: " << argv[i] << std::endl;
@@ -124,18 +124,18 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 					break;
 				}
 			}
-			
+
 			if ( annotationFiles.size() < 2 ) {
 			    std::cerr << "ERROR: Fewer than two files entered.  Please enter at least two files to crossmap."  << std::endl << std::endl;
 			    return false;
 			}
 		}
-		
+
 		/**************************************************************
-		* 
+		*
 		* Check for --map_type / -m arguments
 		* Default is OVERLAP (in both/all files) if this flag isn't set.
-		* 
+		*
 		**************************************************************/
 		if (strcmp("--map_type", argv[i]) == 0 || strcmp("-m", argv[i]) == 0 ) {
 		    i++;
@@ -159,25 +159,25 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 		      }
 		    }
 		}
-		
+
 		/**************************************************************
-		* 
+		*
 		* Check for --chromosome / -c arguments
 		* Default is column 1 if this flag isn't set.
-		* 
+		*
 		**************************************************************/
 		if (strcmp("--chromosome", argv[i]) == 0 || strcmp("-c", argv[i]) == 0 ) {
 		    i++;
 		    if ( i >= argc ) {
 			std::cout << "Chromosome flag entered but no parameter entered.  Assuming first column contains chromosome/reference id information." << std::endl << std::endl;
-			std::cerr << "WARNING: Chromosome flag entered but no parameter entered.  Assuming first column contains chromosome/reference id information." << std::endl << std::endl; 
+			std::cerr << "WARNING: Chromosome flag entered but no parameter entered.  Assuming first column contains chromosome/reference id information." << std::endl << std::endl;
 			// return since i is now past the final argument
 			return true;
 		    } else if ( strncmp(argv[i], "-", 1) == 0 ) {
 			std::cout << "Chromosome flag entered but no parameter entered.  Assuming first column contains chromosome/reference id information." << std::endl << std::endl;
 			std::cerr << "WARNING: Chromosome flag entered but no parameter entered.  Assuming first column contains chromosome/reference id information." << std::endl << std::endl;
 		    } else if ( atoi(argv[i]) && atoi(argv[i]) > 0 ) {
-		      // Valid integer and above 0 (rounded by truncating any decimals if float entered).  
+		      // Valid integer and above 0 (rounded by truncating any decimals if float entered).
 		      bool _setcolumn = setChromosomeColumn( atoi(argv[i]) );
 		      if (!_setcolumn) {
 			  std::cerr << "ERROR: Problem setting chromosome column number.  Aborting run." << std::endl << std::endl;
@@ -195,23 +195,23 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 		}
 
 		/**************************************************************
-		* 
+		*
 		* Check for --start / -s arguments
 		* Default is column 2 if this flag isn't set.
-		* 
+		*
 		**************************************************************/
 		if (strcmp("--start", argv[i]) == 0 || strcmp("-s", argv[i]) == 0 ) {
 		    i++;
 		    if ( i >= argc ) {
 			std::cout << "Start flag entered but no parameter entered.  Assuming second column contains start position information." << std::endl << std::endl;
-			std::cerr << "WARNING: Start flag entered but no parameter entered.  Assuming second column contains start position information." << std::endl << std::endl; 
+			std::cerr << "WARNING: Start flag entered but no parameter entered.  Assuming second column contains start position information." << std::endl << std::endl;
 			// return since i is now past the final argument
 			return true;
 		    } else if ( strncmp(argv[i], "-", 1) == 0 ) {
 			std::cout << "Start flag entered but no parameter entered.  Assuming second column contains start position information." << std::endl << std::endl;
 			std::cerr << "WARNING: Start flag entered but no parameter entered.  Assuming second column contains start position information." << std::endl << std::endl;
 		    } else if ( atoi(argv[i]) && atoi(argv[i]) > 0 ) {
-		      // Valid integer and above 0 (rounded by truncating any decimals if float entered).  
+		      // Valid integer and above 0 (rounded by truncating any decimals if float entered).
 		      bool _setcolumn = setStartColumn( atoi(argv[i]) );
 		      if (!_setcolumn) {
 			  std::cerr << "ERROR: Problem setting start column number.  Aborting run." << std::endl << std::endl;
@@ -223,30 +223,30 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 		      return false;
 		    } else if ( atoi(argv[i]) < 0 ) {
 		      // Invalid; number is negative
-		      std::cerr << "ERROR: Start flag entered with parameter, but parameter is negative number.  Please enter a valid column number in integer form (the first column is considered 1, not 0).  Aborting run." << std::endl << std::endl;		      
+		      std::cerr << "ERROR: Start flag entered with parameter, but parameter is negative number.  Please enter a valid column number in integer form (the first column is considered 1, not 0).  Aborting run." << std::endl << std::endl;
 		      return false;
 		    }
 		}
-		
+
 		/**************************************************************
-		* 
+		*
 		* Check for --end / -e arguments
 		* Default is same as start column if this flag isn't set.
-		* 
+		*
 		**************************************************************/
 		if (strcmp("--end", argv[i]) == 0 || strcmp("-e", argv[i]) == 0 ) {
 		    i++;
 		    if ( i >= argc ) {
 			std::cout << "End flag entered but no parameter entered.  Assuming end column contains is the same column as start (single position annotations)." << std::endl << std::endl;
-			std::cerr << "WARNING: End flag entered but no parameter entered.  Assuming end column contains is the same column as start (single position annotations)." << std::endl << std::endl; 
+			std::cerr << "WARNING: End flag entered but no parameter entered.  Assuming end column contains is the same column as start (single position annotations)." << std::endl << std::endl;
 			// return since i is now past the final argument
 			return true;
 		    } else if ( strncmp(argv[i], "-", 1) == 0 ) {
 			std::cout << "End flag entered but no parameter entered.  Assuming end column contains is the same column as start (single position annotations)." << std::endl << std::endl;
-			std::cerr << "WARNING: End flag entered but no parameter entered.  Assuming end column contains is the same column as start (single position annotations)." << std::endl << std::endl; 
-			
+			std::cerr << "WARNING: End flag entered but no parameter entered.  Assuming end column contains is the same column as start (single position annotations)." << std::endl << std::endl;
+
 		    } else if ( atoi(argv[i]) && atoi(argv[i]) > 0 ) {
-		      // Valid integer and above 0 (rounded by truncating any decimals if float entered).  
+		      // Valid integer and above 0 (rounded by truncating any decimals if float entered).
 		      bool _setcolumn = setEndColumn( atoi(argv[i]) );
 		      if (!_setcolumn) {
 			  std::cerr << "ERROR: Problem setting end column number.  Aborting run." << std::endl << std::endl;
@@ -261,23 +261,23 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 		      std::cerr << "ERROR: End flag entered with parameter, but parameter is negative number.  Please enter a valid column number in integer form (the first column is considered 1, not 0).  Aborting run." << std::endl << std::endl;		      return false;
 		    }
 		}
-		
+
 		/**************************************************************
-		* 
+		*
 		* Check for --file_type / -f arguments
 		* Default is csv.
-		* 
+		*
 		**************************************************************/
 		if (strcmp("--file_type", argv[i]) == 0 || strcmp("-f", argv[i]) == 0 ) {
 		    i++;
 		    if ( i >= argc ) {
 			std::cout << "File type flag entered but no parameter entered.  Assuming default of CSV file type." << std::endl << std::endl;
-			std::cerr << "WARNING: File type flag entered but no parameter entered.  Assuming default of CSV file type." << std::endl << std::endl; 
+			std::cerr << "WARNING: File type flag entered but no parameter entered.  Assuming default of CSV file type." << std::endl << std::endl;
 			// return since i is now past the final argument
 			return true;
 		    } else if ( strncmp(argv[i], "-", 1) == 0 ) {
 			std::cout << "File type flag entered but no parameter entered.  Assuming default of CSV file type." << std::endl << std::endl;
-			std::cerr << "WARNING: File type flag entered but no parameter entered.  Assuming default of CSV file type." << std::endl << std::endl; 
+			std::cerr << "WARNING: File type flag entered but no parameter entered.  Assuming default of CSV file type." << std::endl << std::endl;
 		    } else {
 			std::string _tmpFileType(argv[i]);
 			std::transform(_tmpFileType.begin(), _tmpFileType.end(), _tmpFileType.begin(), ::tolower);
@@ -291,52 +291,52 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 			std::cout << "File type can only be tsv or csv. " << argv[i] << " was entered and is not a valid file type.  Aborting run." << std::endl << std::endl;
 			std::cerr << "ERROR: File type can only be tsv or csv. " << argv[i] << " was entered and is not a valid file type.  Aborting run." << std::endl << std::endl;
 		      }
-			
+
 		    }
 		}
-		
+
 		/**************************************************************
-		* 
+		*
 		* Check for --no_header / -h arguments
 		* Default is that annotation files have headers.
 		* Note: this is a flag for ALL files; all must either have headers or no headers
 		* If you set flag, you are specifying that the files do not have headers
-		* 
+		*
 		**************************************************************/
 		if (strcmp("--no_header", argv[i]) == 0 || strcmp("-h", argv[i]) == 0 ) {
-			setHeader(false);			
+			setHeader(false);
 		}
 		/**************************************************************
-		* 
+		*
 		* Check for --zero_based / -z arguments
 		* Default is that the annotation is 1 based.
 		* Note: this is a flag for ALL files; all must either be 0 based or 1 based
 		* Setting this flag specifies that the files are 0 based
-		* 
+		*
 		**************************************************************/
 		if (strcmp("--zero_based", argv[i]) == 0 || strcmp("-z", argv[i]) == 0 ) {
 		    setZeroBased(true);
 		}
-		
+
 		/**************************************************************
-		* 
+		*
 		* Check for --cpus / -t arguments
 		* Default is same as start column if this flag isn't set.
-		* 
+		*
 		**************************************************************/
 		if (strcmp("--cpus", argv[i]) == 0 || strcmp("-t", argv[i]) == 0 ) {
 		    i++;
 		    if ( i >= argc ) {
 			std::cout << "CPUS flag entered but no parameter entered.  Assuming single thread should be used." << std::endl << std::endl;
-			std::cerr << "WARNING: CPUS flag entered but no parameter entered.  Assuming single thread should be used." << std::endl << std::endl; 
+			std::cerr << "WARNING: CPUS flag entered but no parameter entered.  Assuming single thread should be used." << std::endl << std::endl;
 			// return since i is now past the final argument
 			return true;
 		    } else if ( strncmp(argv[i], "-", 1) == 0 ) {
 			std::cout << "CPUS flag entered but no parameter entered.  Assuming single thread should be used." << std::endl << std::endl;
-			std::cerr << "WARNING: CPUS flag entered but no parameter entered.  Assuming single thread should be used." << std::endl << std::endl; 
-			
+			std::cerr << "WARNING: CPUS flag entered but no parameter entered.  Assuming single thread should be used." << std::endl << std::endl;
+
 		    } else if ( atoi(argv[i]) && atoi(argv[i]) > 0 ) {
-		      // Valid integer and above 0 (rounded by truncating any decimals if float entered).  
+		      // Valid integer and above 0 (rounded by truncating any decimals if float entered).
 		      bool _setThreads = setThreads( atoi(argv[i]) );
 		      if (!_setThreads) {
 			  std::cerr << "ERROR: Problem setting thread number.  Aborting run." << std::endl << std::endl;
@@ -352,69 +352,11 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 		    }
 		}
 	}
-	
-	
-	
+
+
+
   return properArguments;
 }
-
-
-
-
-
-
-
-
-
-
-/*************************************************************************
- * Threading Library
- ************************************************************************/
-
-
-void BioMapper::launchThreads() {
-/*
-	bool done = false;
-
-	// Generate my queue
-	std::queue<std::string> queue;
-	
-	// Create the vector of threads as a structure
-	struct : std::vector<std::thread> {
-	    void join() { for_each(begin(), end(), mem_fun_ref(&value_type::join)); }
-	} threads;
-	
-	using lock_guard = std::lock_guard<std::mutex>;
-	using unique_lock = std::unique_lock<std::mutex>;
-
-
-	bool threader(std::string);
-	threader = BioMapper::mapFiles;
-
-	//distributor<std::string> process( (threader(refIDs.first) );
-
-	//vector <thread> threads;
-
-	// Generate one thread for each refID that matches criteria (all files have it)
-        for (auto& refIDs : referenceIDs) {
-                if (refIDs.second == returnNumberOfAnnotationFiles()) {
-
-					distributor<std::string> process( (threader(refIDs.first) );
-                    //threads.push_back(thread(&BioMapper::mapFiles,this,refIDs.first));
-                }
-        }
-
-        // Join all threads in turn
-        //for_each(threads.begin(), threads.end(),mem_fn(&thread::join));
-*/
-}
-
-
-
-
-
-
-
 
 
 
@@ -424,14 +366,16 @@ void BioMapper::launchThreads() {
  * Cleanup
  ****************************************************************************************/
 bool BioMapper::argumentCleanup () {
-  bool vec = verifyEndColumn();
-  bool slc = setLastColumn();
- annotationFileNumber = returnNumberOfAnnotationFiles ();
-  
-  if (vec && slc)
-    return true;
-  else
-    return false;
+    bool vec = verifyEndColumn();
+    bool slc = setLastColumn();
+    annotationFileNumber = returnNumberOfAnnotationFiles ();
+
+    if (vec && slc) {
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 
 bool BioMapper::verifyEndColumn() {
@@ -439,32 +383,32 @@ bool BioMapper::verifyEndColumn() {
     std::cout << "Single Position Annotations detected; setting parameters accordingly." << std::endl << std::endl;
     endColumn = startColumn;
   }
-  
+
   return true;
 }
 
 bool BioMapper::setLastColumn() {
-  if ( lastColumn < chromosomeColumn ) 
+  if ( lastColumn < chromosomeColumn )
     lastColumn = chromosomeColumn;
   if ( lastColumn < startColumn )
     lastColumn = startColumn;
   if ( lastColumn < endColumn )
     lastColumn = endColumn;
-  
+
   if ( lastColumn < 1 ) {
     std::cerr << "ERROR: Error setting last column.  All columns are set to less than one.  Aborting." << endl << endl;
-    return false;  
+    return false;
   }
-  
+
   return true;
 }
 
 
 
 
- 
 
- 
+
+
 /*****************************************************************************************
  * Setters
  ****************************************************************************************/
@@ -506,7 +450,7 @@ bool BioMapper::setThreads (unsigned int _thrds) {
       // Shouldn't get here
     return false;
   }
-  if (_thrds <= maximum_threads) {  
+  if (_thrds <= maximum_threads) {
     threads_to_use = _thrds;
   } else {
     threads_to_use = maximum_threads;
