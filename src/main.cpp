@@ -147,6 +147,9 @@ void mapFiles (BioMapper& myMap) {
         vector <int> basemap;
         vector <int> tmpmap;
 
+	vector <int> ntmap;
+	vector <int> tmpntmap;
+	
         // Loop through each annotation file and compare position mapping culmatively
         for (int i = 0; i < myMap.annotationFileNumber; i++) {
                 //
@@ -161,7 +164,9 @@ void mapFiles (BioMapper& myMap) {
                 // mapping criteria.
 
                 vector <int>& bm = (i == 0) ? basemap : tmpmap;
+		vector <int>& ntbm = (i == 0) ? ntmap : tmpntmap;
 
+		
                 // Open current annotatoin file
                 // std::ifstream::in tag redundant; but just incase ifstream changes in the future include it
                 ifstream annot;

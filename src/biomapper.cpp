@@ -17,8 +17,8 @@ using namespace std;
  * Constructor
  ****************************************************************************************/
 
-BioMapper::BioMapper () : chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0),
-  fileType("csv"), zeroBased(false), threads_to_use(1), mappingStyle(OVERLAP), maximum_threads(std::thread::hardware_concurrency()) { }
+BioMapper::BioMapper () : chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), nucleotideColumn(-1),
+  fileType("csv"), zeroBased(false), threads_to_use(1), nucleotides(false), mappingStyle(OVERLAP), maximum_threads(std::thread::hardware_concurrency()) { }
 
 
 
@@ -348,7 +348,43 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 		      return false;
 		    } else if ( atoi(argv[i]) < 0 ) {
 		      // Invalid; number is negative
-		      std::cerr << "ERROR: CPUS flag entered with parameter, but parameter is negative number.  Please enter a valid integer.  Aborting run." << std::endl << std::endl;		      return false;
+		      std::cerr << "ERROR: CPUS flag entered with parameter, but parameter is a negative number.  Please enter a valid integer.  Aborting run." << std::endl << std::endl;		      
+		      return false;
+		    }
+		}
+		
+		/**************************************************************
+		*
+		* Check for --snps / -p arguments
+		* Default is that the program is agnostic about SNP/SNV status.
+		*
+		**************************************************************/
+		if (strcmp("--snps", argv[i]) == 0 || strcmp("-p", argv[i]) == 0 ) {
+		    i++;
+		    if ( i >= argc ) {
+			std::cout << "SNPS flag entered but no parameter entered.  Disregarding SNPS flag." << std::endl << std::endl;
+			std::cerr << "WARNING: SNPS flag entered but no parameter entered.  Disregarding SNPS flag." << std::endl << std::endl;
+			// return since i is now past the final argument
+			return true;
+		    } else if ( strncmp(argv[i], "-", 1) == 0 ) {
+			std::cout << "SNPS flag entered but no parameter entered.  Disregarding SNPS flag." << std::endl << std::endl;
+			std::cerr << "WARNING: SNPS flag entered but no parameter entered.  Disregarding SNPS flag." << std::endl << std::endl;
+
+		    } else if ( atoi(argv[i]) && atoi(argv[i]) > 0 ) {
+		      // Valid integer and above 0 (rounded by truncating any decimals if float entered).
+		      bool _setNucleotideColumn = setNucleotideColumn( atoi(argv[i]) );
+		      if (!_setNucleotideColumn) {
+			  std::cerr << "ERROR: Problem setting nucleotide column.  Aborting run." << std::endl << std::endl;
+			  return false;
+		      }
+		    } else if ( !atoi(argv[i]) ) {
+		      // Invalid; no number entered.
+		      std::cerr << "ERROR: SNPS flag entered with parameter, but parameter is not a valid number.  Please enter a valid integer.  Aborting run." << std::endl << std::endl;
+		      return false;
+		    } else if ( atoi(argv[i]) < 0 ) {
+		      // Invalid; number is negative
+		      std::cerr << "ERROR: SNPS flag entered with parameter, but parameter is a negative number.  Please enter a valid integer.  Aborting run." << std::endl << std::endl;		      
+		      return false;
 		    }
 		}
 	}
@@ -435,7 +471,7 @@ bool BioMapper::setHeader (bool hdr) {
   header = hdr;
   return true;
 }
-
+unsigned
 bool BioMapper::setZeroBased (bool zb) {
   zeroBased = zb;
   return true;
@@ -456,6 +492,16 @@ bool BioMapper::setThreads (unsigned int _thrds) {
     threads_to_use = maximum_threads;
   }
     return true;
+}
+
+bool setNucleotideColumn (int _nt) {
+  if (_nt <=0) {
+      // Shouldn't get here
+    return false;
+  }
+  nucleotides = true;
+  nucleotideColumn = _nt;
+  return true;
 }
 
 

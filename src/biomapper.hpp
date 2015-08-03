@@ -49,6 +49,7 @@ class BioMapper
         int lastColumn;
         // How many annotation files have been entered in
         int annotationFileNumber;
+	int nucleotideColumn;
 
         unsigned int threads_to_use;
         const unsigned int maximum_threads;
@@ -56,6 +57,7 @@ class BioMapper
         // Whether the files have a header or not
         bool header;
         bool zeroBased;
+	bool nucleotides;
 
         // Allowed file types (i.e. csv, tsv, etc.)
         std::string fileType;
@@ -89,6 +91,7 @@ class BioMapper
 		bool setHeader (bool hdr);
 		bool setZeroBased (bool zb);
 		bool setThreads (unsigned int _thrds);
+		bool setNucleotideColumn(int _nt);
 
         //
         // Cleanup
