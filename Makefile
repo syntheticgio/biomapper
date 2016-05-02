@@ -2,7 +2,7 @@
 CC = g++
 
 # Compiler flags
-CFLAGS = -std=c++11
+CFLAGS = -std=c++11 -Wno-reorder
 
 # the build target executable
 TARGET = biomapper
@@ -20,6 +20,7 @@ release: compile
 debug: CFLAGS += -pthread -g -Wall
 debug: CXXFLAGS = -DDEBUG
 debug: compile
+debug: interface
 
 # Raspberry pi
 # 'make raspberry'
@@ -36,7 +37,7 @@ osx: CXXFLAGS = -DDEBUG
 osx: compile
 
 # Support functions
-compile: main.o biomapper.o
+compile: main.o biomapper.o 
 	$(CC) $(CFLAGS) -o bin/$(TARGET) src/main.o src/biomapper.o $(CXXFLAGS)
 
 main.o: src/main.cpp 
@@ -45,6 +46,8 @@ main.o: src/main.cpp
 biomapper.o: src/biomapper.cpp src/biomapper.hpp
 	$(CC) $(CFLAGS) -c src/biomapper.cpp -o src/biomapper.o	$(CXXFLAGS)
 
+interface: 
+	g++ src/interface.cpp -o src/interface -std=c++11 `pkg-config gtkmm-3.0 --cflags --libs`
 
 # clean up the built files
 clean: 

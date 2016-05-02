@@ -6,7 +6,6 @@
 #ifndef __BIOMAPPER_HPP_INCLUDED__
 #define __BIOMAPPER_HPP_INCLUDED__
 
-enum CrossMapType { OVERLAP, EXCLUSIVE };
 //class idx
 //{
 //public:
@@ -14,6 +13,8 @@ enum CrossMapType { OVERLAP, EXCLUSIVE };
 //  int64_t val;
 //};
 
+
+enum CrossMapType { OVERLAP, EXCLUSIVE, COLLAPSE };
 
 class BioMapper
 {
@@ -24,10 +25,8 @@ class BioMapper
 
         std::mutex mtx;
 
-        // Determine the references that are in all files
-        bool determineReferences();
-        // Determine the command line arguments
-        bool determineArguments(int argc, char** argv);
+        bool determineReferences(); // Determine the references that are in all files
+        bool determineArguments(int argc, char** argv); // Determine the command line arguments
 
         // Finish up arguments by verifying that the columns
         // meet criteria for each column.
@@ -39,42 +38,35 @@ class BioMapper
         //
         // Class Public Variables
         //
-        // Column number (base 1) where the chromosomes/segments are recorded
-        int chromosomeColumn;
-        // Column number (base 1) where the start values are recorded
-        int startColumn;
-        // Column number (base 1) where the end values are recorded
-        int endColumn;
-        // Last column out of chromosome, start, and end for quicker reading
-        int lastColumn;
-        // How many annotation files have been entered in
-        int annotationFileNumber;
-	int nucleotideColumn;
+		
+        int chromosomeColumn; // Column number (base 1) where the chromosomes/segments/sequence IDs are recorded
+        int startColumn; // Column number (base 1) where the start values are recorded
+        int endColumn; // Column number (base 1) where the end values are recorded
+        int lastColumn // Last column out of chromosome, start, and end for quicker reading;
+	int nucleotideColumn; // The column that is the nucleotide
 
-        unsigned int threads_to_use;
-        const unsigned int maximum_threads;
+        int annotationFileNumber; // The number of annotation files that are entered
 
-        // Whether the files have a header or not
-        bool header;
-        bool zeroBased;
+        unsigned int threads_to_use; // Number of threads to use
+        const unsigned int maximum_threads; // Maximum number of threads supported by the system
+
+        bool header; // If files have a header (true)
+	bool zeroBased; // Whether the file is 0 (true) based or 1 based (false)
+
 	bool nucleotides;
 
-        // Allowed file types (i.e. csv, tsv, etc.)
-        std::string fileType;
-        // List of annotation files
-        std::vector <std::string> annotationFiles;
-        // vector of threads that are launched
-        std::vector <std::string> threads;
-        // List of the output data files (one for each chromosome)
-        std::vector <std::string> dataFiles;
-        // Dictionary of the reference IDs with the number of files that matched them
-        std::map <std::string, int> referenceIDs;
-        // Dictionary of the header rows from each file
+        std::string fileType; // Allowed file types (i.e. csv, tsv, etc.)
+        std::vector <std::string> annotationFiles; // List of annotation files
+        std::vector <std::string> threads; // vector of threads that are launched
+        std::vector <std::string> dataFiles; // List of the output data files (one for each chromosome)
+        std::map <std::string, int> referenceIDs; // Dictionary of the reference IDs with the number of files that matched them
+        
+	// Dictionary of the header rows from each file
         // Position here matches file position in annotationFiles
-        std::map <std::string, std::string> headerRows;
+        //std::map <std::string, std::string> headerRows;
+	std::vector <std::string> headerRows;
 
-        // Enum of different mapping styles possible
-        CrossMapType mappingStyle;
+        CrossMapType mappingStyle; // Enum of different mapping styles possible
 
         // Debugging
         #ifdef DEBUG

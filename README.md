@@ -8,13 +8,14 @@
   - [x] Add multithreading capability
   - [X] Allow user to select number of threads up to maximum
   - [ ] Verify multithreading works on larger data sets
+  - [ ] Lock global mutex or BioMapper class mutex?  Check to see if class mutex suffices.
 - [ ] Output
   - [ ] Generate generic text readable output files (currently in binary) based on the files mapped
   - [ ] Specific flags can be provided for special mapping cases (i.e. SNVs vs. SNV dataset for exclusions, etc.)
 - [x] Enable EXCLUSIVE (in first annotation but not in the second)
+- [ ] Enable COLLAPSE (record all non-redundant positions)
 - [ ] Enable VCF file_type
 - [ ] Enable GTF/GFF file_type
-- [ ] Lock global mutex or BioMapper class mutex?  Check to see if class mutex suffices.
 - [x] Headers
   - [x] Record headers in vector
   - [x] Record headers in map instead?
@@ -28,7 +29,7 @@
 ###USAGE:
 
 
-biomapper --annotations <file1.csv> <file2.csv> <...> [--map_type <overlap>] [--chromosome <1>] [--start <2>] [--end <2>] [--file_type <csv>] [--zero_based] [--no_header]
+biomapper --annotations <file1.csv> <file2.csv> <...> [--map_type <overlap>] [--chromosome <1>] [--start <2>] [--end <2>] [--file_type <csv>] [--zero_based] [--no_header] [--cpus <threads>] [--snps]
 
 
 
@@ -38,7 +39,7 @@ REQUIRED FLAGS:
 
 OPTIONAL FLAGS:
 
-	--map_type 	/ -m	:	This is the type of mapping the biomapper should perform.  Current options are OVERLAP (returns loci that exist in all annotation files) and EXCLUSIVE (returns loci that exist in the first annotation file but NOT any subsequent ones).
+	--map_type 	/ -m	:	This is the type of mapping the biomapper should perform.  Current options are OVERLAP (returns loci that exist in all annotation files), EXCLUSIVE (returns loci that exist in only in any one of the annotations) and COLLAPSE (returns loci that exist in any annotations).
 	--chromosome 	/ -c 	:	This is the column number (begining at 1) where the chromosome or reference ID information is in each annotation file.  All files must have the same column as the chromosome information currently.  The default for this value is column 1.
 	--start 	/ -s   	:	This is the column number (beginning at 1) where the start position for the loci is recorded in the annotation file.  All files must have the same column as the start position.  The default for this value is column 2.
 	--end 		/ -e	:	This is the column number (beginning at 1) where the end position for the loci is recorded in the annotation file.  All files must have the same column as the end position.  If the end position column is the same as the start position column, it signifies that the loci are for a single position (SNP for example).  This default for this value is column 2, making the default position information single position if neither flag is set.

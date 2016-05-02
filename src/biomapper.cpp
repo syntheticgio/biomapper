@@ -17,8 +17,7 @@ using namespace std;
  * Constructor
  ****************************************************************************************/
 
-BioMapper::BioMapper () : chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), header(true), annotationFileNumber(0), nucleotideColumn(-1),
-  fileType("csv"), zeroBased(false), threads_to_use(1), nucleotides(false), mappingStyle(OVERLAP), maximum_threads(std::thread::hardware_concurrency()) { }
+BioMapper::BioMapper () : chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), annotationFileNumber(0),  header(true), threads_to_use(1), zeroBased(false), fileType("csv"), nucleotides(false), maximum_threads(std::thread::hardware_concurrency()), nucleotideColumn(-1), mappingStyle(OVERLAP) { }
 
 
 
@@ -151,10 +150,12 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 			if ( _tmpMappingType.compare("overlap") == 0 ) {
 			    mappingStyle = OVERLAP;
 			    std::cout << "Mapping Style: Overlap (output positions that exist in all entered annotation files." << std::endl;
-			} else if ( _tmpMappingType.compare("exclusive") == 0) {
+			} else if ( _tmpMappingType.compare("exclusive") == 0 ) {
 			    mappingStyle = EXCLUSIVE;
+			} else if ( _tmpMappingType.compare("collapse") == 0 ) {
+				mappingStyle = COLLAPSE;	
 			} else {
-			    std::cerr << "ERROR: Improper type for --map_type/-m.  You must use either 'overlap' or 'exclusive' as the flag option." << std::endl << std::endl;
+			    std::cerr << "ERROR: Improper type for --map_type/-m.  You must use 'overlap', 'exclusive', or 'collapse' as the flag option." << std::endl << std::endl;
 			    return false;
 		      }
 		    }
@@ -320,8 +321,20 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 
 		/**************************************************************
 		*
+		* Check for --collapse 
+		* Default is that the  program does not do collapse annotations.
+		* Setting this flag specifies that the program should collapse
+		* file coordinates into an output file that contains all continuous
+		* coordinate values
+		*
+		**************************************************************/
+		if (strcmp("--collapse", argv[i]) == 0 ) {
+		    setCollapse(true);
+		}
+		/**************************************************************
+		*
 		* Check for --cpus / -t arguments
-		* Default is same as start column if this flag isn't set.
+		* Default is e 1 thread if this flag isn't set.
 		*
 		**************************************************************/
 		if (strcmp("--cpus", argv[i]) == 0 || strcmp("-t", argv[i]) == 0 ) {
@@ -471,7 +484,7 @@ bool BioMapper::setHeader (bool hdr) {
   header = hdr;
   return true;
 }
-unsigned
+
 bool BioMapper::setZeroBased (bool zb) {
   zeroBased = zb;
   return true;
@@ -494,13 +507,19 @@ bool BioMapper::setThreads (unsigned int _thrds) {
     return true;
 }
 
-bool setNucleotideColumn (int _nt) {
+bool BioMapper::setNucleotideColumn (int _nt) {
   if (_nt <=0) {
       // Shouldn't get here
     return false;
   }
   nucleotides = true;
   nucleotideColumn = _nt;
+  return true;
+}
+
+
+bool BioMapper::setCollapse(bool _sc) {
+  collapse = _sc;
   return true;
 }
 

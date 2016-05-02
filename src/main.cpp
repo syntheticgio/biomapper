@@ -20,7 +20,6 @@ std::mutex m;
 
 int main (int argc, char* argv[])
 {
-
   #ifdef DEBUG
 	std::cout << "\n\nDebug works\n\n";
   #endif
@@ -94,29 +93,101 @@ int main (int argc, char* argv[])
 
 	std::cout << "All threads have finished" << std::endl << std::endl;
 
+	
+	// Need to now generate mapped output file.
+	
+	for (int i = 0; i < myMap.dataFiles.size(); i++) {
+		// myMap.dataFiles should be each of the data files
+		ifstream crossingFile;
+		crossingFile.open(myMap.dataFiles[i], ios::binary | ios::ate | ios::in);
+		
+		if(crossingFile.is_open()){
+			  
+			//streampos size = crossingFile.tellg(); // Returns the size of the file.
+			crossingFile.seekg (0, ios::beg); // return pointer to begining of file
+			//char * memblock = new char [size];
+			
+			long long int _buffer; // Buffer recording the binary data
+			long long int counter = 0; // Counter to determine which iteration we are at for data extraction
+
+			long long int curPosition = 0;
+
+			// TODO: This might be assuming I'm guarenteeing an whole number of integers are written (currently I believe I am)
+			while(crossingFile.read (&_buffer, sizeof(_buffer))) {
+				//Data is read into _buffer.
+			   if(_buffer > 0) {
+					//important data found.
+					long long int offset = counter * 64;
+
+					// Need to find where 1s start or where they end.
+					// How to determine first 1?
+					
+
+					counter++; // Increment to know the future offset
+			   }
+			  
+
+			}
+			
+			// Probably redundant
+			if (crossingFile.fail()) {
+				//Error with reading file
+				cout << "Error with reading binary file." << endl << "Only " << crossingFile.gcount() << " could be read out of an expected " << sizeof(_buffer) << "." << endl;;
+			}
+			crossingFile.close();
+		} else {
+			cout << "Failed to open the file: " << myMap.dataFiles[i] << "." << endl;
+		}
+	}
+	
+	
+	// Need to output useful files here.
+	//ifstream annot;
+    //annot.open(myMap.annotationFiles[i], std::ifstream::in);
+	
+	/*
+	for(int i = 0; i < myMap.dataFiles.size(); i++) {
+		// Find each position from dataFiles
+		// Retrieve informaiton from 1st annotation file
+		// 
+		
+		// Open for current reference ID
+		ifstream crossingFile;
+		crossingFile.open(myMap.dataFiles[i], ios::binary);
+		
+		if(crossingFile.is_open()) {
+			// get length of file:
+			crossingFile.seekg (0, crossingFile.end);
+			int length = crossingFile.tellg();
+			crossingFile.seekg (0, is.beg);  
+
+			char * buffer = new char [length];
+
+			crossingFile.read (buffer,length);
+			
+			delete[] buffer;
+		}
+	}
+	*/
 }
 
 
 void mapFiles (BioMapper& myMap) {
-  std::string refID;
+		std::string refID;
 
-  //std::unique_lock<std::mutex> lck(m);
-  //std::lock(m);
-  {
-    std::lock_guard<std::mutex> lock(m);
-    if (myMap.threads.empty()) {
-      #ifdef DEBUG
-	std::cout << "No more threads, exiting function." << std::endl;
-      #endif
-      return;
-    }
-    else {
-      refID=myMap.threads.back();
-      myMap.threads.pop_back();
-    }
-  }
-  //m.unlock();
-  //std::unlock(m);
+		{
+			std::lock_guard<std::mutex> lock(m);
+			if (myMap.threads.empty()) {
+			  #ifdef DEBUG
+			std::cout << "No more threads, exiting function." << std::endl;
+			  #endif
+			  return;
+			}
+			else {
+			  refID=myMap.threads.back();
+			  myMap.threads.pop_back();
+			}
+		}
 
         #ifdef DEBUG
                 std::cout << "In mapFiles function" << std::endl;
@@ -135,7 +206,6 @@ void mapFiles (BioMapper& myMap) {
                 return ;
         }
 
-        //
         // Declare two vectors of bits (int64_t)
         // Each position in the reference id will be a single bit
         // If the bit is turned on, there was a match with all files so far
@@ -147,8 +217,8 @@ void mapFiles (BioMapper& myMap) {
         vector <int> basemap;
         vector <int> tmpmap;
 
-	vector <int> ntmap;
-	vector <int> tmpntmap;
+		vector <int> ntmap;
+		vector <int> tmpntmap;
 	
         // Loop through each annotation file and compare position mapping culmatively
         for (int i = 0; i < myMap.annotationFileNumber; i++) {
@@ -164,7 +234,7 @@ void mapFiles (BioMapper& myMap) {
                 // mapping criteria.
 
                 vector <int>& bm = (i == 0) ? basemap : tmpmap;
-		vector <int>& ntbm = (i == 0) ? ntmap : tmpntmap;
+				//vector <int>& ntbm = (i == 0) ? ntmap : tmpntmap;
 
 		
                 // Open current annotatoin file
@@ -292,11 +362,17 @@ void mapFiles (BioMapper& myMap) {
                 }
                 // Record bits in the main bitmap
                 for (unsigned int j = 0; j < bm.size(); j++) {
-		    if (myMap.mappingStyle == OVERLAP) {
-                         basemap[j] = basemap[j] & bm[j];
-		    } else if (myMap.mappingStyle == EXCLUSIVE) {
-		         basemap[j] = basemap[j] | bm[j];
-		    }
+		    		if (myMap.mappingStyle == OVERLAP) {
+            			basemap[j] = basemap[j] & bm[j];
+				    } else if (myMap.mappingStyle == EXCLUSIVE) {
+						// This XOR doesn't quite do what we want for this.  For now it is accurate; but it should really
+						// be able to distinguish between the different maps.
+				        basemap[j] = basemap[j] ^ bm[j];
+				    } else if (myMap.mappingStyle == COLLAPSE) {
+						basemap[j] = basemap[j] | bm[j];
+					} else {
+						std::cout << "Error in recording information to bitmap.  No propper Mapping Style set" << endl;
+					}
                 }
 
                 annot.close();
@@ -328,8 +404,9 @@ void mapFiles (BioMapper& myMap) {
 	#endif
     refIDOutputFile.open(__refID, ios::binary);
 
+	// Save the data in binary within the temproary dat files
     for (unsigned int i = 0; i < basemap.size(); i++) {
-        refIDOutputFile << basemap[i];
+      refIDOutputFile.write(reinterpret_cast<const char*>(&basemap[i]), sizeof basemap[i]);
     }
 
     refIDOutputFile.close();
