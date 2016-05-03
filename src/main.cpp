@@ -107,22 +107,39 @@ int main (int argc, char* argv[])
 			crossingFile.seekg (0, ios::beg); // return pointer to begining of file
 			//char * memblock = new char [size];
 			
-			long long int _buffer; // Buffer recording the binary data
+			unsigned long long int _buffer; // Buffer recording the binary data
 			long long int counter = 0; // Counter to determine which iteration we are at for data extraction
 
-			long long int curPosition = 0;
+			vector <unsigned long long int> _start;
+			vector <unsigned long long int> _end;
 
 			// TODO: This might be assuming I'm guarenteeing an whole number of integers are written (currently I believe I am)
 			while(crossingFile.read (&_buffer, sizeof(_buffer))) {
 				//Data is read into _buffer.
 			   if(_buffer > 0) {
 					//important data found.
-					long long int offset = counter * 64;
-
+					if (~_buffer == 0) {
+						// Range full currently
+						counter++;
+						continue;
+					} 
 					// Need to find where 1s start or where they end.
 					// How to determine first 1?
-					
+					int rightBit = __builtin_ffsll(_buffer); // This returns the index + 1 of the right most bit
 
+					if (rightBit > 0) {
+						// Determine starting position by capturing the first right most bit
+						// Add new vector entry
+						_start.add
+						_start = counter * 64 + rightBit - 1;
+					} else {
+						int leftBit = __builtin_clzll(_buffer) // This returns the position of the highest bit
+						// Shouldn't be able to be a full int of bits at this point so must be a value
+						_end = counter * 64 + (64 - leftBit);
+						// Now that we have the end, need to print out (or add to vector) for range
+						
+					} 
+				
 					counter++; // Increment to know the future offset
 			   }
 			  
