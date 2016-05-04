@@ -20,7 +20,7 @@ release: compile
 debug: CFLAGS += -pthread -g -Wall
 debug: CXXFLAGS = -DDEBUG
 debug: compile
-debug: interface
+#debug: interface
 
 # Raspberry pi
 # 'make raspberry'
@@ -46,8 +46,8 @@ main.o: src/main.cpp
 biomapper.o: src/biomapper.cpp src/biomapper.hpp
 	$(CC) $(CFLAGS) -c src/biomapper.cpp -o src/biomapper.o	$(CXXFLAGS)
 
-interface: 
-	g++ src/interface.cpp -o src/interface -std=c++11 `pkg-config gtkmm-3.0 --cflags --libs`
+#interface: 
+#	g++ src/interface.cpp -o src/interface -std=c++11 `pkg-config gtkmm-3.0 --cflags --libs`
 
 # clean up the built files
 clean: 

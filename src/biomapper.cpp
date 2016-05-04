@@ -1,4 +1,3 @@
-#include "biomapper.hpp"
 #include <map>
 #include <iostream>
 #include <fstream>
@@ -10,6 +9,7 @@
 #include <bitset>
 #include <thread>
 #include "distributor.hpp"
+#include "biomapper.hpp"
 
 using namespace std;
 
@@ -17,7 +17,7 @@ using namespace std;
  * Constructor
  ****************************************************************************************/
 
-BioMapper::BioMapper () : chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), annotationFileNumber(0),  header(true), threads_to_use(1), zeroBased(false), fileType("csv"), nucleotides(false), maximum_threads(std::thread::hardware_concurrency()), nucleotideColumn(-1), mappingStyle(OVERLAP) { }
+BioMapper::BioMapper () : chromosomeColumn(1), startColumn(2), endColumn(-1), lastColumn(-1), annotationFileNumber(0),  header(true), threads_to_use(1), zeroBased(false), outputFileName("output.csv"), fileType("csv"), nucleotides(false), maximum_threads(std::thread::hardware_concurrency()), nucleotideColumn(-1), mappingStyle(OVERLAP) { }
 
 
 
@@ -124,11 +124,40 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 				}
 			}
 
-			if ( annotationFiles.size() < 2 ) {
-			    std::cerr << "ERROR: Fewer than two files entered.  Please enter at least two files to crossmap."  << std::endl << std::endl;
-			    return false;
-			}
+			//if ( annotationFiles.size() < 2 ) {
+			//    std::cerr << "ERROR: Fewer than two files entered.  Please enter at least two files to crossmap."  << std::endl << std::endl;
+			//    return false;
+			//}
 		}
+
+	  	/**************************************************************
+		*
+		* Check for --output / -o argument
+		* This sets the output file name.
+		*
+		**************************************************************/
+
+		if (strcmp("--output", argv[i]) == 0 || strcmp("-o", argv[i]) == 0 ) {
+			i++;
+			if (i >= argc) {
+				std::cout << "No output file name entered.  Assuming default of 'output.csv' file name." << std::endl << std::endl;
+			    std::cerr << "WARNING: No output file name following the --output/-o flag.  File name 'output.csv' used by default." << std::endl << std::endl;
+				// return since i is now past the final argument
+				return true;
+		    } else if ( strncmp(argv[i], "-", 1) == 0 ) {
+				std::cout << "Ouput file name flag entered but no parameter provided.  Assuming default of 'output.csv' file name." << std::endl << std::endl;
+				std::cerr << "WARNING: Ouput file name flag entered but no parameter provided.  Assuming default of 'output.csv' file name." << std::endl << std::endl;
+		    } else {
+				//std::string _tmpFileType(argv[i]);
+				bool _rtn = setFileName(argv[i]);
+				if (!_rtn) {
+					// TODO: Make sure that the file name is formatted properly in setFileName function and return false if not to present the following errors
+					std::cout << "Ouput file name improperly formatted.  Using default 'output.csv' file name." << std::endl << std::endl;
+					std::cerr << "WARNING: Ouput file name improperly formatted.  Using default 'output.csv' file name." << std::endl << std::endl;
+				}		    	
+		    }
+		}
+
 
 		/**************************************************************
 		*
@@ -402,7 +431,10 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 		}
 	}
 
-
+	if ( annotationFiles.size() < 2 && mappingStyle != COLLAPSE ) {
+	    std::cerr << "ERROR: Fewer than two files entered.  Please enter at least two files to crossmap."  << std::endl << std::endl;
+	    return false;
+	}
 
   return properArguments;
 }
@@ -473,6 +505,12 @@ bool BioMapper::setStartColumn (int column) {
 bool BioMapper::setEndColumn (int column) {
     endColumn = column;
     return true;
+}
+
+bool BioMapper::setFileName (const char * file_name) {
+	outputFileName.clear();
+	outputFileName = string(file_name);
+	return true;
 }
 
 bool BioMapper::setFileType (const std::string file_type) {

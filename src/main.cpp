@@ -93,28 +93,34 @@ int main (int argc, char* argv[])
 
 	std::cout << "All threads have finished" << std::endl << std::endl;
 
-	
+	// Open Output file
+	ofstream outputFile(myMap.outputFileName);
+	// write a header
+	outputFile << "chromosome,start,end" << endl;
+
 	// Need to now generate mapped output file.
 	
-	for (int i = 0; i < myMap.dataFiles.size(); i++) {
+	for (size_t i = 0; i < myMap.dataFiles.size(); i++) {
 		// myMap.dataFiles should be each of the data files
 		ifstream crossingFile;
 		crossingFile.open(myMap.dataFiles[i], ios::binary | ios::ate | ios::in);
 		
-		if(crossingFile.is_open()){
-			  
-			//streampos size = crossingFile.tellg(); // Returns the size of the file.
+		if(crossingFile.is_open()){			  
+			long int size = crossingFile.tellg(); // Returns the size of the file.
+			long int sizeOfFileInInts= size/4;
+
 			crossingFile.seekg (0, ios::beg); // return pointer to begining of file
 			//char * memblock = new char [size];
 			
-			unsigned long long int _buffer; // Buffer recording the binary data
+			unsigned int _buffer = 0; // Buffer recording the binary data
 			long long int counter = 0; // Counter to determine which iteration we are at for data extraction
 
 			vector <unsigned long long int> _start;
 			vector <unsigned long long int> _end;
 
 			// TODO: This might be assuming I'm guarenteeing an whole number of integers are written (currently I believe I am)
-			while(crossingFile.read (&_buffer, sizeof(_buffer))) {
+
+			while(crossingFile.read((char *)&_buffer, sizeof(_buffer))) {
 				//Data is read into _buffer.
 			   if(_buffer > 0) {
 					//important data found.
@@ -125,37 +131,46 @@ int main (int argc, char* argv[])
 					} 
 					// Need to find where 1s start or where they end.
 					// How to determine first 1?
-					int rightBit = __builtin_ffsll(_buffer); // This returns the index + 1 of the right most bit
 
-					if (rightBit > 0) {
-						// Determine starting position by capturing the first right most bit
-						// Add new vector entry
-						_start.add
-						_start = counter * 64 + rightBit - 1;
+					// TODO: This method is ignoring if there are small gaps and collapsing!!  Need to check individual bits instead of
+					// relying on __builtins
+
+					int leftBit = __builtin_clz(_buffer); // Return the position of the highest bit
+					
+					if (leftBit > 0) {
+						// There are leading 0 bits
+						unsigned long long int _tmp = counter * 32 + leftBit + 1;	
+						// Set the start position of this range.
+						_start.push_back(_tmp);
 					} else {
-						int leftBit = __builtin_clzll(_buffer) // This returns the position of the highest bit
-						// Shouldn't be able to be a full int of bits at this point so must be a value
-						_end = counter * 64 + (64 - leftBit);
-						// Now that we have the end, need to print out (or add to vector) for range
-						
-					} 
-				
+						// If trailing 0s, set end position
+						int rightBit = __builtin_ffs(_buffer); // This returns the index + 1 of the right most bit											
+						if(rightBit > 0) {
+							unsigned long long int _tmp = counter * 32 + (32 - rightBit + 1);
+							_end.push_back(_tmp);
+						}	
+					}	
+					
 					counter++; // Increment to know the future offset
 			   }
-			  
+			}
 
-			}
+			// Print out the ranges here
+			for (int i =0; i < _start.length(); i++) {
+				cout << "START: " << _start[i] << "\tEND: " << _end[i] << endl;
+				outputFile << << _start[i] << "," << _end[i] << endl;
+			}			
 			
-			// Probably redundant
-			if (crossingFile.fail()) {
-				//Error with reading file
-				cout << "Error with reading binary file." << endl << "Only " << crossingFile.gcount() << " could be read out of an expected " << sizeof(_buffer) << "." << endl;;
-			}
+			// Close the file
 			crossingFile.close();
+
 		} else {
 			cout << "Failed to open the file: " << myMap.dataFiles[i] << "." << endl;
 		}
 	}
+	
+	// Close the write file
+	outputFile.close();
 	
 	
 	// Need to output useful files here.
@@ -412,7 +427,8 @@ void mapFiles (BioMapper& myMap) {
     // which files to read later.
     {
         std::lock_guard<std::mutex> lock(m);
-        myMap.dataFiles.push_back(refID);
+        myMap.dataFiles.push_back(__refID);
+
     }
 
 	#ifdef DEBUG
@@ -423,7 +439,8 @@ void mapFiles (BioMapper& myMap) {
 
 	// Save the data in binary within the temproary dat files
     for (unsigned int i = 0; i < basemap.size(); i++) {
-      refIDOutputFile.write(reinterpret_cast<const char*>(&basemap[i]), sizeof basemap[i]);
+      //refIDOutputFile.write(reinterpret_cast<const char*>(&basemap[i]), sizeof basemap[i]);
+		refIDOutputFile.write((char *)&basemap[i], sizeof basemap[i]);
     }
 
     refIDOutputFile.close();

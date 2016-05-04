@@ -16,6 +16,7 @@
 - [ ] Enable COLLAPSE (record all non-redundant positions)
 - [ ] Enable VCF file_type
 - [ ] Enable GTF/GFF file_type
+- [x] Enable output file flag
 - [x] Headers
   - [x] Record headers in vector
   - [x] Record headers in map instead?
@@ -29,7 +30,7 @@
 ###USAGE:
 
 
-biomapper --annotations <file1.csv> <file2.csv> <...> [--map_type <overlap>] [--chromosome <1>] [--start <2>] [--end <2>] [--file_type <csv>] [--zero_based] [--no_header] [--cpus <threads>] [--snps]
+biomapper --annotations <file1.csv> <file2.csv> <...> [--output <output_file_name.csv>] [--map_type <overlap>] [--chromosome <1>] [--start <2>] [--end <2>] [--file_type <csv>] [--zero_based] [--no_header] [--cpus <threads>] [--snps]
 
 
 
@@ -39,6 +40,7 @@ REQUIRED FLAGS:
 
 OPTIONAL FLAGS:
 
+	--output / -o	:	This sets the output file name.  If the directory is not provided it will be created in the working directory.  If no parameter is entered, the default file name will be 'output.csv'.
 	--map_type 	/ -m	:	This is the type of mapping the biomapper should perform.  Current options are OVERLAP (returns loci that exist in all annotation files), EXCLUSIVE (returns loci that exist in only in any one of the annotations) and COLLAPSE (returns loci that exist in any annotations).
 	--chromosome 	/ -c 	:	This is the column number (begining at 1) where the chromosome or reference ID information is in each annotation file.  All files must have the same column as the chromosome information currently.  The default for this value is column 1.
 	--start 	/ -s   	:	This is the column number (beginning at 1) where the start position for the loci is recorded in the annotation file.  All files must have the same column as the start position.  The default for this value is column 2.

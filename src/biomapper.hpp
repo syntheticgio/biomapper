@@ -42,8 +42,8 @@ class BioMapper
         int chromosomeColumn; // Column number (base 1) where the chromosomes/segments/sequence IDs are recorded
         int startColumn; // Column number (base 1) where the start values are recorded
         int endColumn; // Column number (base 1) where the end values are recorded
-        int lastColumn // Last column out of chromosome, start, and end for quicker reading;
-	int nucleotideColumn; // The column that is the nucleotide
+        int lastColumn; // Last column out of chromosome, start, and end for quicker reading
+		int nucleotideColumn; // The column that is the nucleotide
 
         int annotationFileNumber; // The number of annotation files that are entered
 
@@ -51,10 +51,12 @@ class BioMapper
         const unsigned int maximum_threads; // Maximum number of threads supported by the system
 
         bool header; // If files have a header (true)
-	bool zeroBased; // Whether the file is 0 (true) based or 1 based (false)
+		bool zeroBased; // Whether the file is 0 (true) based or 1 based (false)
 
-	bool nucleotides;
+		bool collapse;
+		bool nucleotides;
 
+		std::string outputFileName; // The name for the output file for mapped results.
         std::string fileType; // Allowed file types (i.e. csv, tsv, etc.)
         std::vector <std::string> annotationFiles; // List of annotation files
         std::vector <std::string> threads; // vector of threads that are launched
@@ -69,10 +71,8 @@ class BioMapper
         CrossMapType mappingStyle; // Enum of different mapping styles possible
 
         // Debugging
-        #ifdef DEBUG
-            void printFiles ();
-            void printClassVariables ();
-        #endif
+        void printFiles ();
+        void printClassVariables ();
 
 	private:
 		// Class setters
@@ -84,6 +84,8 @@ class BioMapper
 		bool setZeroBased (bool zb);
 		bool setThreads (unsigned int _thrds);
 		bool setNucleotideColumn(int _nt);
+		bool setFileName (const char * file_name);
+		bool setCollapse(bool _sc);
 
         //
         // Cleanup
