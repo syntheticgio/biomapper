@@ -107,7 +107,7 @@ int main (int argc, char* argv[])
 		
 		if(crossingFile.is_open()){			  
 			long int size = crossingFile.tellg(); // Returns the size of the file.
-			long int sizeOfFileInInts= size/4;
+			//long int sizeOfFileInInts= size/4;
 
 			crossingFile.seekg (0, ios::beg); // return pointer to begining of file
 			//char * memblock = new char [size];
@@ -156,9 +156,9 @@ int main (int argc, char* argv[])
 			}
 
 			// Print out the ranges here
-			for (int i =0; i < _start.length(); i++) {
+			for (int i =0; i < _start.size(); i++) {
 				cout << "START: " << _start[i] << "\tEND: " << _end[i] << endl;
-				outputFile << << _start[i] << "," << _end[i] << endl;
+				outputFile << _start[i] << "," << _end[i] << endl;
 			}			
 			
 			// Close the file
@@ -439,8 +439,8 @@ void mapFiles (BioMapper& myMap) {
 
 	// Save the data in binary within the temproary dat files
     for (unsigned int i = 0; i < basemap.size(); i++) {
-      //refIDOutputFile.write(reinterpret_cast<const char*>(&basemap[i]), sizeof basemap[i]);
-		refIDOutputFile.write((char *)&basemap[i], sizeof basemap[i]);
+      refIDOutputFile.write(reinterpret_cast<const char*>(&basemap[i]), sizeof basemap[i]);
+	  //refIDOutputFile.write((char *)&basemap[i], sizeof basemap[i]);
     }
 
     refIDOutputFile.close();
