@@ -107,13 +107,9 @@ int main (int argc, char* argv[])
 		returnReferenceIDFromFileName(ref);
 		
 		if(crossingFile.is_open()){			  
-<<<<<<< HEAD
 			// TODO: Need to check to make sure size of the file neatly fits into 32 bit chunks or adjust
 			// accordingly.
 			//long int size = crossingFile.tellg(); // Returns the size of the file.
-=======
-			long int size = crossingFile.tellg(); // Returns the size of the file.
->>>>>>> f7031763207d7931ffa2536802aed443175616ec
 			//long int sizeOfFileInInts= size/4;
 
 			crossingFile.seekg (0, ios::beg); // return pointer to begining of file
@@ -164,16 +160,10 @@ int main (int argc, char* argv[])
 			}
 
 			// Print out the ranges here
-<<<<<<< HEAD
 			//TODO: Need to adjust output here to also display annotations ingested
 			for (size_t j =0; j < _start.size(); j++) {
 				cout <<"REF:" << ref << "\tSTART: " << _start[j] << "\tEND: " << _end[j] << endl;
 				outputFile << ref << "," << _start[j] << "," << _end[j] << endl;
-=======
-			for (int i =0; i < _start.size(); i++) {
-				cout << "START: " << _start[i] << "\tEND: " << _end[i] << endl;
-				outputFile << _start[i] << "," << _end[i] << endl;
->>>>>>> f7031763207d7931ffa2536802aed443175616ec
 			}			
 			
 			// Close the file
@@ -434,10 +424,6 @@ void mapFiles (BioMapper& myMap) {
 	// Save the data in binary within the temproary dat files
     for (unsigned int i = 0; i < basemap.size(); i++) {
       refIDOutputFile.write(reinterpret_cast<const char*>(&basemap[i]), sizeof basemap[i]);
-<<<<<<< HEAD
-=======
-	  //refIDOutputFile.write((char *)&basemap[i], sizeof basemap[i]);
->>>>>>> f7031763207d7931ffa2536802aed443175616ec
     }
 
     refIDOutputFile.close();
