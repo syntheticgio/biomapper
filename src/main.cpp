@@ -13,6 +13,7 @@ using namespace std;
 void _debugThreading ();
 
 void mapFiles (BioMapper& myMap);
+void returnReferenceIDFromFileName(string & ref);
 
 // Create mutex
 std::mutex m;
@@ -20,10 +21,6 @@ std::mutex m;
 
 int main (int argc, char* argv[])
 {
-  #ifdef DEBUG
-	std::cout << "\n\nDebug works\n\n";
-  #endif
-
 	BioMapper myMap;
 	bool validateArguments = myMap.determineArguments(argc, argv);
 	if (!validateArguments) {
@@ -103,11 +100,17 @@ int main (int argc, char* argv[])
 	for (size_t i = 0; i < myMap.dataFiles.size(); i++) {
 		// myMap.dataFiles should be each of the data files
 		ifstream crossingFile;
+		string file = myMap.dataFiles[i];
 		crossingFile.open(myMap.dataFiles[i], ios::binary | ios::ate | ios::in);
+		string ref = myMap.dataFiles[i];
+		
+		returnReferenceIDFromFileName(ref);
 		
 		if(crossingFile.is_open()){			  
-			long int size = crossingFile.tellg(); // Returns the size of the file.
-			long int sizeOfFileInInts= size/4;
+			// TODO: Need to check to make sure size of the file neatly fits into 32 bit chunks or adjust
+			// accordingly.
+			//long int size = crossingFile.tellg(); // Returns the size of the file.
+			//long int sizeOfFileInInts= size/4;
 
 			crossingFile.seekg (0, ios::beg); // return pointer to begining of file
 			//char * memblock = new char [size];
@@ -119,6 +122,7 @@ int main (int argc, char* argv[])
 			vector <unsigned long long int> _end;
 
 			// TODO: This might be assuming I'm guarenteeing an whole number of integers are written (currently I believe I am)
+
 
 			while(crossingFile.read((char *)&_buffer, sizeof(_buffer))) {
 				//Data is read into _buffer.
@@ -156,14 +160,19 @@ int main (int argc, char* argv[])
 			}
 
 			// Print out the ranges here
-			for (int i =0; i < _start.length(); i++) {
-				cout << "START: " << _start[i] << "\tEND: " << _end[i] << endl;
-				outputFile << << _start[i] << "," << _end[i] << endl;
+			//TODO: Need to adjust output here to also display annotations ingested
+			for (size_t j =0; j < _start.size(); j++) {
+				cout <<"REF:" << ref << "\tSTART: " << _start[j] << "\tEND: " << _end[j] << endl;
+				outputFile << ref << "," << _start[j] << "," << _end[j] << endl;
 			}			
 			
 			// Close the file
 			crossingFile.close();
-
+						
+			//TODO: This could be set as a parameter whether or not to keep intermediate files
+			// Delete the temorary data file
+			std::remove(file.c_str());
+			
 		} else {
 			cout << "Failed to open the file: " << myMap.dataFiles[i] << "." << endl;
 		}
@@ -171,36 +180,7 @@ int main (int argc, char* argv[])
 	
 	// Close the write file
 	outputFile.close();
-	
-	
-	// Need to output useful files here.
-	//ifstream annot;
-    //annot.open(myMap.annotationFiles[i], std::ifstream::in);
-	
-	/*
-	for(int i = 0; i < myMap.dataFiles.size(); i++) {
-		// Find each position from dataFiles
-		// Retrieve informaiton from 1st annotation file
-		// 
-		
-		// Open for current reference ID
-		ifstream crossingFile;
-		crossingFile.open(myMap.dataFiles[i], ios::binary);
-		
-		if(crossingFile.is_open()) {
-			// get length of file:
-			crossingFile.seekg (0, crossingFile.end);
-			int length = crossingFile.tellg();
-			crossingFile.seekg (0, is.beg);  
 
-			char * buffer = new char [length];
-
-			crossingFile.read (buffer,length);
-			
-			delete[] buffer;
-		}
-	}
-	*/
 }
 
 
@@ -366,12 +346,16 @@ void mapFiles (BioMapper& myMap) {
                                 // This is the case where start is prior or equal to end
                                 trueStart = _start;
                                 trueEnd = _end;
-                                bm.resize(bucket2 + 1, 0);
+								if (bm.size() < (bucket2 + 1)){
+								  bm.resize(bucket2 + 1, 0);
+								}
                         } else {
                                 // This is the case where start is after end (columns are mixed/reverse strand, etc)
                                 trueStart = _end;
                                 trueEnd = _start;
-                                bm.resize(bucket1 + 1, 0);
+								if (bm.size() < (bucket1 + 1)){
+								  bm.resize(bucket1 + 1, 0);
+								}
                         }
 
                         // Correct if 1 based instead of 0 based
@@ -414,13 +398,13 @@ void mapFiles (BioMapper& myMap) {
                 std::cout << "REF ID: " << _refID << std::endl;
                 for (unsigned int i = 0; i < basemap.size(); i++) {
                         std::bitset<32> x(basemap[i]);
-                        std::cout << (i*32+1) << '\t' << x << '\t'<< ((i+1)*32) << std::endl;
+                        //std::cout << (i*32+1) << '\t' << x << '\t'<< ((i+1)*32) << std::endl;
                 }
-                std::cout << std::endl << std::endl;
+                //std::cout << std::endl << std::endl;
         #endif
 
         std::ofstream refIDOutputFile;
-        std::string __refID = "__tmp__" + refID + ".dat";
+        std::string __refID = "__tmp__" + refID;
 
     // Re-lock the data and write
     // to the data file so we know
@@ -439,8 +423,7 @@ void mapFiles (BioMapper& myMap) {
 
 	// Save the data in binary within the temproary dat files
     for (unsigned int i = 0; i < basemap.size(); i++) {
-      //refIDOutputFile.write(reinterpret_cast<const char*>(&basemap[i]), sizeof basemap[i]);
-		refIDOutputFile.write((char *)&basemap[i], sizeof basemap[i]);
+      refIDOutputFile.write(reinterpret_cast<const char*>(&basemap[i]), sizeof basemap[i]);
     }
 
     refIDOutputFile.close();
@@ -455,7 +438,12 @@ void mapFiles (BioMapper& myMap) {
   return ;
 }
 
-
+void returnReferenceIDFromFileName(string & ref) {
+	string _tmp = "__tmp__";
+	string::size_type i = ref.find(_tmp);
+	if (i != string::npos)
+	  ref.erase(i, _tmp.length());
+}
 
 void _debugThreading () {
 	cout << "Hello World!" << endl;
