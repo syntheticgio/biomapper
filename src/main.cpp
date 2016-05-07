@@ -426,7 +426,7 @@ void mapFiles (BioMapper& myMap) {
 
 	// Save the data in binary within the temproary dat files
     for (unsigned int i = 0; i < basemap.size(); i++) {
-	  cout << "basemap[i]: " << basemap[i] << " i: " << i << endl;
+	  //cout << "basemap[i]: " << basemap[i] << " i: " << i << endl;
       refIDOutputFile.write(reinterpret_cast<const char*>(&basemap[i]), sizeof basemap[i]);
     }
 
