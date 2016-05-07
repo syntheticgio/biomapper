@@ -155,9 +155,10 @@ int main (int argc, char* argv[])
 						}	
 					}	
 					
-					counter++; // Increment to know the future offset
 			   }
-			}
+			   counter++; // Increment to know the future offset
+			}					
+
 
 			// Print out the ranges here
 			//TODO: Need to adjust output here to also display annotations ingested
@@ -279,7 +280,7 @@ void mapFiles (BioMapper& myMap) {
                 while ( getline(annot, row) ) {
                         stringstream _rowElements(row);
                         string _element, _ref;
-                        int i = 1;
+                        int ii = 1;
                         long _start = -1;
                         long _end = -1;
                         bool validMatch = false;
@@ -288,7 +289,7 @@ void mapFiles (BioMapper& myMap) {
                         while ( getline(_rowElements, _element, splitter) ) {
 
                                 // Check to see if we've gotten to the chromosome column
-                                if ( i == myMap.chromosomeColumn ) {
+                                if ( ii == myMap.chromosomeColumn ) {
                                         // Check to make sure that the reference sequence is the correct one
                                         // or skip to the next row if not.
                                         if ( _element.compare(_refID) == 0 ) {
@@ -298,7 +299,7 @@ void mapFiles (BioMapper& myMap) {
                                                 validMatch = false;
                                                 break;
                                         }
-                                } else if (i == myMap.startColumn) {
+                                } else if (ii == myMap.startColumn) {
                                         // Check for the start column value
                                         // TODO: right now we assume it is a valid number or it returns a 0
                                         // Should also check to see if the errorEnd returns to a valid string
@@ -310,7 +311,7 @@ void mapFiles (BioMapper& myMap) {
                                                 break;
                                         }
                                 }
-                                else if (i == myMap.endColumn) {
+                                else if (ii == myMap.endColumn) {
                                         // Check for the end column value
                                         // TODO: right now we assume it is a valid number or it returns a 0
                                         // Should also check to see if the errorEnd returns to a valid string
@@ -322,10 +323,10 @@ void mapFiles (BioMapper& myMap) {
                                                 break;
                                         }
                                 }
-                                if (i >= myMap.chromosomeColumn && i >= myMap.startColumn && i >= myMap.endColumn) {
+                                if (ii >= myMap.chromosomeColumn && ii >= myMap.startColumn && ii >= myMap.endColumn) {
                                         break;
                                 }
-                                i++;
+                                ii++;
                         }
 
                         if (!validMatch) continue;
@@ -366,12 +367,13 @@ void mapFiles (BioMapper& myMap) {
 
                         // Map is now properly sized to handle this range
 
-                        for (long ii = trueStart; ii <= trueEnd; ii++) {
+                        for (long jj = trueStart; jj <= trueEnd; jj++) {
                                 // Set the bucket that contains the position of interest
-                                int _bucket = ii / 32;
+                                int _bucket = jj / 32;
                                 // Get the bit within the bucket for the position of interest
-                                int _pos = 31 - (ii % 32);
-
+                                int _pos = 31 - (jj % 32);
+								//int _pos = jj % 32;
+								
                                 // Set positional bit
                                 bm[_bucket] = bm[_bucket] | ( 1 << _pos );
                         }
@@ -385,6 +387,7 @@ void mapFiles (BioMapper& myMap) {
 						// be able to distinguish between the different maps.
 				        basemap[j] = basemap[j] ^ bm[j];
 				    } else if (myMap.mappingStyle == COLLAPSE) {
+					  
 						basemap[j] = basemap[j] | bm[j];
 					} else {
 						std::cout << "Error in recording information to bitmap.  No propper Mapping Style set" << endl;
@@ -396,9 +399,9 @@ void mapFiles (BioMapper& myMap) {
 
         #ifdef DEBUG
                 std::cout << "REF ID: " << _refID << std::endl;
-                for (unsigned int i = 0; i < basemap.size(); i++) {
-                        std::bitset<32> x(basemap[i]);
-                        //std::cout << (i*32+1) << '\t' << x << '\t'<< ((i+1)*32) << std::endl;
+                for (unsigned int cnt = 0; cnt < basemap.size(); cnt++) {
+                        std::bitset<32> x(basemap[cnt]);
+                        //std::cout << (cnt*32+1) << '\t' << x << '\t'<< ((cnt+1)*32) << std::endl;
                 }
                 //std::cout << std::endl << std::endl;
         #endif
@@ -423,6 +426,7 @@ void mapFiles (BioMapper& myMap) {
 
 	// Save the data in binary within the temproary dat files
     for (unsigned int i = 0; i < basemap.size(); i++) {
+	  cout << "basemap[i]: " << basemap[i] << " i: " << i << endl;
       refIDOutputFile.write(reinterpret_cast<const char*>(&basemap[i]), sizeof basemap[i]);
     }
 

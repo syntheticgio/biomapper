@@ -366,7 +366,7 @@ bool BioMapper::determineArguments(int argc, char** argv) {
 		* Default is e 1 thread if this flag isn't set.
 		*
 		**************************************************************/
-		if (strcmp("--cpus", argv[i]) == 0 || strcmp("-t", argv[i]) == 0 ) {
+		if (strcmp("--cpus", argv[i]) == 0 || strcmp("-t", argv[i]) == 0 || strcmp("--cpu", argv[i]) == 0 ) {
 		    i++;
 		    if ( i >= argc ) {
 			std::cout << "CPUS flag entered but no parameter entered.  Assuming single thread should be used." << std::endl << std::endl;
