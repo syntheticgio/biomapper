@@ -44,9 +44,11 @@ class BioMapper
         int endColumn; // Column number (base 1) where the end values are recorded
         int lastColumn; // Last column out of chromosome, start, and end for quicker reading
 		int nucleotideColumn; // The column that is the nucleotide
-
         int annotationFileNumber; // The number of annotation files that are entered
 
+        //
+        // Thread information
+        //
         unsigned int threads_to_use; // Number of threads to use
         const unsigned int maximum_threads; // Maximum number of threads supported by the system
 

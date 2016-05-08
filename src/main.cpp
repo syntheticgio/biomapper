@@ -301,27 +301,31 @@ void mapFiles (BioMapper& myMap) {
                                         }
                                 } else if (ii == myMap.startColumn) {
                                         // Check for the start column value
-                                        // TODO: right now we assume it is a valid number or it returns a 0
-                                        // Should also check to see if the errorEnd returns to a valid string
-                                        char * errorEnd;
-                                        _start = strtol(_element.c_str(), &errorEnd, 10);
+                                        _start = strtol(_element.c_str(), nullptr, 10);
                                         if ( _start < 0 ) {
                                                 // position is negative, invalid so skip
                                                 validMatch = false;
                                                 break;
-                                        }
+                                        } else if ( _start == 0 && !myMap.zeroBased) {
+											// This is either a failed strtol or an actual 0 starting position
+											// Since zeroBased variable is false, must be an error
+											validMatch = false;
+											break;
+										}
                                 }
                                 else if (ii == myMap.endColumn) {
                                         // Check for the end column value
-                                        // TODO: right now we assume it is a valid number or it returns a 0
-                                        // Should also check to see if the errorEnd returns to a valid string
-                                        char * errorEnd;
-                                        _end = strtol(_element.c_str(), &errorEnd, 10);
+                                        _end = strtol(_element.c_str(), nullptr, 10);
                                         if ( _end < 0 ) {
                                                 // position negative
                                                 validMatch = false;
                                                 break;
-                                        }
+                                        } else if ( _end == 0 && !myMap.zeroBased) {
+											// This is either a failed strtol or an actual 0 end position
+											// Since zeroBased variable is false, must be an error
+											validMatch = false;
+											break;
+										}
                                 }
                                 if (ii >= myMap.chromosomeColumn && ii >= myMap.startColumn && ii >= myMap.endColumn) {
                                         break;
@@ -347,14 +351,14 @@ void mapFiles (BioMapper& myMap) {
                                 // This is the case where start is prior or equal to end
                                 trueStart = _start;
                                 trueEnd = _end;
-								if (bm.size() < (bucket2 + 1)){
+								if (bm.size() < (unsigned)(bucket2 + 1)){
 								  bm.resize(bucket2 + 1, 0);
 								}
                         } else {
                                 // This is the case where start is after end (columns are mixed/reverse strand, etc)
                                 trueStart = _end;
                                 trueEnd = _start;
-								if (bm.size() < (bucket1 + 1)){
+								if (bm.size() < (unsigned)(bucket1 + 1)){
 								  bm.resize(bucket1 + 1, 0);
 								}
                         }
@@ -372,8 +376,6 @@ void mapFiles (BioMapper& myMap) {
                                 int _bucket = jj / 32;
                                 // Get the bit within the bucket for the position of interest
                                 int _pos = 31 - (jj % 32);
-								//int _pos = jj % 32;
-								
                                 // Set positional bit
                                 bm[_bucket] = bm[_bucket] | ( 1 << _pos );
                         }
@@ -401,7 +403,6 @@ void mapFiles (BioMapper& myMap) {
                 std::cout << "REF ID: " << _refID << std::endl;
                 for (unsigned int cnt = 0; cnt < basemap.size(); cnt++) {
                         std::bitset<32> x(basemap[cnt]);
-                        //std::cout << (cnt*32+1) << '\t' << x << '\t'<< ((cnt+1)*32) << std::endl;
                 }
                 //std::cout << std::endl << std::endl;
         #endif
@@ -424,9 +425,10 @@ void mapFiles (BioMapper& myMap) {
 	#endif
     refIDOutputFile.open(__refID, ios::binary);
 
+	//
 	// Save the data in binary within the temproary dat files
+	//
     for (unsigned int i = 0; i < basemap.size(); i++) {
-	  //cout << "basemap[i]: " << basemap[i] << " i: " << i << endl;
       refIDOutputFile.write(reinterpret_cast<const char*>(&basemap[i]), sizeof basemap[i]);
     }
 
@@ -436,7 +438,9 @@ void mapFiles (BioMapper& myMap) {
         std::cout << "Finished thread, launching new one if needed." << std::endl;
     #endif
 
-    // Recursive; keep calling self until all threads are exhausted
+    //
+	// Recursive; keep calling self until all threads are exhausted
+	//
     mapFiles(myMap);
 
   return ;
