@@ -304,11 +304,13 @@ void mapFiles (BioMapper& myMap) {
                                         _start = strtol(_element.c_str(), nullptr, 10);
                                         if ( _start < 0 ) {
                                                 // position is negative, invalid so skip
+												std::cerr << "WARNING: Start column value is negative.  Skipping row." << std::endl << std::endl;
                                                 validMatch = false;
                                                 break;
                                         } else if ( _start == 0 && !myMap.zeroBased) {
 											// This is either a failed strtol or an actual 0 starting position
 											// Since zeroBased variable is false, must be an error
+											std::cerr << "WARNING: Start column value is equal to 0 or not a number.  Skipping row." << std::endl << std::endl;
 											validMatch = false;
 											break;
 										}
@@ -318,11 +320,13 @@ void mapFiles (BioMapper& myMap) {
                                         _end = strtol(_element.c_str(), nullptr, 10);
                                         if ( _end < 0 ) {
                                                 // position negative
+											  std::cerr << "WARNING: End column value is negative.  Skipping row." << std::endl << std::endl;
                                                 validMatch = false;
                                                 break;
                                         } else if ( _end == 0 && !myMap.zeroBased) {
 											// This is either a failed strtol or an actual 0 end position
 											// Since zeroBased variable is false, must be an error
+										  	 std::cerr << "ERROR: End column value is equal to 0 or not a number. Skipping row." << std::endl << std::endl;
 											validMatch = false;
 											break;
 										}
