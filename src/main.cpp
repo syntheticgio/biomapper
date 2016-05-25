@@ -128,19 +128,48 @@ int main (int argc, char* argv[])
 				//Data is read into _buffer.
 			   if(_buffer > 0) {
 					//important data found.
-					if (~_buffer == 0) {
-						// Range full currently
+					if ( ~_buffer == 0 && ( _start.size() > _end.size() ) ) {
+						// Range full currently and start position calculated
 						counter++;
 						continue;
 					} 
-					// Need to find where 1s start or where they end.
-					// How to determine first 1?
 
-					// TODO: This method is ignoring if there are small gaps and collapsing!!  Need to check individual bits instead of
-					// relying on __builtins
-
-					int leftBit = __builtin_clz(_buffer); // Return the position of the highest bit
+					//int leftBit = __builtin_clz(_buffer); // Return the position of the highest bit
 					
+					bool setRight=false;
+					if (_start.size() == _end.size()) {
+						// Start position not set yet
+						// Note that previous right position already set 
+						setRight=true;
+					}
+					
+					// Search through all bits starting with leftmost bit
+					// Start by setting the 
+					unsigned int bit = 1 << 31;
+					for (int bitNum=32; bitNum > 0; bitNum--) {
+					  if(!setRight && (_buffer & bit)){
+						// bits still set on left side
+						  bit = bit >> 1;
+						  continue;
+					  } else if (!setRight) {
+						// Set the left number
+						setRight=true;
+						unsigned long long int _tmp = (counter * 32) + (32 - bitNum);
+						_end.push_back(_tmp);
+					  } else if (setRight && (_buffer & bit)) {
+						setRight=false;
+						unsigned long long int _tmp = (counter * 32) + (32 - bitNum) + 1;
+						_start.push_back(_tmp);
+					  }
+					  bit = bit >> 1;
+					}
+					
+					//
+					// TODO:Check logic.  Need to set the start position even if left most bit is 1 if start position not already set
+					// Also need to set a new start position if something like 1111000001111111111 instead of skipping.  Doesn't just collapse, skips next entry
+					//
+					
+					/*
 					if (leftBit > 0) {
 						// There are leading 0 bits
 						unsigned long long int _tmp = counter * 32 + leftBit + 1;	
@@ -153,7 +182,8 @@ int main (int argc, char* argv[])
 							unsigned long long int _tmp = counter * 32 + (32 - rightBit + 1);
 							_end.push_back(_tmp);
 						}	
-					}	
+					}
+					*/
 					
 			   }
 			   counter++; // Increment to know the future offset
@@ -281,8 +311,8 @@ void mapFiles (BioMapper& myMap) {
                         stringstream _rowElements(row);
                         string _element, _ref;
                         int ii = 1;
-                        long _start = -1;
-                        long _end = -1;
+                        long long int _start = -1;
+                        long long int _end = -1;
                         bool validMatch = false;
 
                         // Loop through each element in the row
@@ -341,10 +371,10 @@ void mapFiles (BioMapper& myMap) {
 
                         // Have row details here, set bits
                         // Need to make sure map size is appropriate.
-                        int bucket1 = _start / 32;
-                        int bucket2 = _end / 32;
-                        long trueStart = -1;
-                        long trueEnd = -1;
+                        long long int bucket1 = _start / 32;
+                        long long int bucket2 = _end / 32;
+                        long long int trueStart = -1;
+                        long long int trueEnd = -1;
 
                         // If end and start are reversed (end is less than the start value)
                         // correct to fix the data or user error.
@@ -375,9 +405,9 @@ void mapFiles (BioMapper& myMap) {
 
                         // Map is now properly sized to handle this range
 
-                        for (long jj = trueStart; jj <= trueEnd; jj++) {
+                        for (long long int jj = trueStart; jj <= trueEnd; jj++) {
                                 // Set the bucket that contains the position of interest
-                                int _bucket = jj / 32;
+                                long long int _bucket = jj / 32;
                                 // Get the bit within the bucket for the position of interest
                                 int _pos = 31 - (jj % 32);
                                 // Set positional bit
@@ -385,7 +415,7 @@ void mapFiles (BioMapper& myMap) {
                         }
                 }
                 // Record bits in the main bitmap
-                for (unsigned int j = 0; j < bm.size(); j++) {
+                for (unsigned long long int j = 0; j < bm.size(); j++) {
 		    		if (myMap.mappingStyle == OVERLAP) {
             			basemap[j] = basemap[j] & bm[j];
 				    } else if (myMap.mappingStyle == EXCLUSIVE) {
@@ -405,7 +435,7 @@ void mapFiles (BioMapper& myMap) {
 
         #ifdef DEBUG
                 std::cout << "REF ID: " << _refID << std::endl;
-                for (unsigned int cnt = 0; cnt < basemap.size(); cnt++) {
+                for (unsigned long long int cnt = 0; cnt < basemap.size(); cnt++) {
                         std::bitset<32> x(basemap[cnt]);
                 }
                 //std::cout << std::endl << std::endl;
@@ -432,8 +462,11 @@ void mapFiles (BioMapper& myMap) {
 	//
 	// Save the data in binary within the temproary dat files
 	//
-    for (unsigned int i = 0; i < basemap.size(); i++) {
-      refIDOutputFile.write(reinterpret_cast<const char*>(&basemap[i]), sizeof basemap[i]);
+    for (unsigned long long int i = 0; i < basemap.size(); i++) {
+	  // Write 4 bytes (since each element of basemap is an int)
+	  int _tmp_bucket = basemap[i];
+	  refIDOutputFile.write((char *)&_tmp_bucket, sizeof(_tmp_bucket));
+      //refIDOutputFile.write(reinterpret_cast<const char*>(&basemap[i]), sizeof(int));
     }
 
     refIDOutputFile.close();
