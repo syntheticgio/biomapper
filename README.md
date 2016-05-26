@@ -6,14 +6,14 @@
 ###TODO:
 - [ ] Multithreading
   - [x] Add multithreading capability
-  - [X] Allow user to select number of threads up to maximum
+  - [x] Allow user to select number of threads up to maximum
   - [ ] Verify multithreading works on larger data sets
   - [ ] Lock global mutex or BioMapper class mutex?  Check to see if class mutex suffices.
 - [ ] Output
-  - [ ] Generate generic text readable output files (currently in binary) based on the files mapped
+  - [x] Generate generic text readable output files (currently in binary) based on the files mapped
   - [ ] Specific flags can be provided for special mapping cases (i.e. SNVs vs. SNV dataset for exclusions, etc.)
 - [x] Enable EXCLUSIVE (in first annotation but not in the second)
-- [ ] Enable COLLAPSE (record all non-redundant positions)
+- [x] Enable COLLAPSE (record all non-redundant positions)
 - [ ] Enable VCF file_type
 - [ ] Enable GTF/GFF file_type
 - [x] Enable output file flag
@@ -24,8 +24,22 @@
   - [x] Add SNPS flag
   - [ ] Record variant nucleotides in 2 bit format
   - [ ] On merging bitmaps for position; check nucleotides at associated position
-  
-  
+
+###BUILDING:
+
+Biomapper can be built in the following ways:
+	COMMAND			:	BINARY FILE IN SRC		:	COMMENT
+	-------			:	------------------		:	-------
+	make debug		:	biomapper-linux-debug	:	This builds the linux debug build of biomapper.  This enables additional output to the console including debugging information.  It is recommended not to use this build unless you are troubleshooting the program.
+	make release	: 	biomapper-linux			:	This builds the linux release version of biomapper.  This is the fastest version and should be used on a Linux system.  This was tested on a Linux Mint 64 bit system but should work on any Linux build that supports c++11.
+	make osx_debug	:	biomapper-osx-debug		:	This builds an OSX compatible debug version of biomapper (tested on OSX El Capitan).  This enables additional output to the console including debugging information.  It is recommended not to use this build unless you are troubleshooting the program.
+	make osx		:	biomapper-osx			:	This builds an OSX compatible version of biomapper (tested on OSX El Capitan).  This is the version that should be used on an OSX system and offers compatibility with the clang native compiler.
+	make raspberry  :	biomapper-raspbian		:	This builds a Raspbian (default raspberry pi version of linux) release version of biomapper.
+	make clean		:	N/A						:	This will clean binary and supporting files from the biomapper/bin/ directory.  This should be done before re-compiling a new binary.
+
+Most users interested in this software are using a Linux based system and should compile an appropriate binary by typing 'make release'. This will place the biomapper-linux binary in the biomapper/bin/ directory.  In order to install it for system wide usage, you should copy this binary to your user bin directory (typically /usr/bin/).
+
+Users on Mac OSX systems should generate the binary file by typing 'make osx' in the terminal within the biomapper directory.  The binary file biomapper-osx will be found in the biomapper/bin/ directory.
 
 ###USAGE:
 
