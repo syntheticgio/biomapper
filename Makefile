@@ -13,14 +13,14 @@ all: compile
 # call by 'make release' or just by 'make'
 release: CFLAGS += -O3
 release: CXXFLAGS = -DRELEASE
-release: TARGET = biomapper.linux
+release: TARGET = biomapper-linux
 release: compile
 
 # Debug mode
 # 'make debug'
 debug: CFLAGS += -pthread -g -Wall
 debug: CXXFLAGS = -DDEBUG
-debug: TARGET = biomapper.linux.debug
+debug: TARGET = biomapper-linux-debug
 debug: compile
 #debug: interface
 
@@ -29,16 +29,25 @@ debug: compile
 raspberry: CC = g++-4.9
 raspberry: CFLAGS += -g -Wall -gdwarf-3
 raspberry: CXXFLAGS = -DDEBUG
-raspberry: TARGET = biomapper.raspbian
+raspberry: TARGET = biomapper-raspbian
 raspberry: compile
 
-# OSX
-# 'make osx'
+# OSX Debug
+# 'make osx_debug'
 # This is a debug build for OSX
+osx_debug: CC = clang++
+osx_debug: CFLAGS += -stdlib=libc++ -g -Wall -gdwarf-3
+osx_debug: CXXFLAGS = -DDEBUG
+osx_debug: TARGET = biomapper-osx-debug
+osx_debug: compile
+
+#OSX Release
+# 'make osx'
+# This is the release build for OSX
 osx: CC = clang++
-osx: CFLAGS += -stdlib=libc++ -g -Wall -gdwarf-3
-osx: CXXFLAGS = -DDEBUG
-osx: TARGET = biomapper.osx.debug
+osx: CFLAGS += -stdlib=libc++ -O3
+osx: CXXFLAGS = -DRELEASE
+osx: TARGET = biomapper-osx
 osx: compile
 
 # Support functions
