@@ -126,13 +126,13 @@ int main (int argc, char* argv[])
 
 			while(crossingFile.read((char *)&_buffer, sizeof(_buffer))) {
 				//Data is read into _buffer.
-			   if(_buffer > 0) {
+			   if(_buffer > 0 ) {
 					//important data found.
 					if ( ~_buffer == 0 && ( _start.size() > _end.size() ) ) {
 						// Range full currently and start position calculated
 						counter++;
 						continue;
-					} 
+					}
 
 					//int leftBit = __builtin_clz(_buffer); // Return the position of the highest bit
 					
@@ -164,27 +164,10 @@ int main (int argc, char* argv[])
 					  bit = bit >> 1;
 					}
 					
-					//
-					// TODO:Check logic.  Need to set the start position even if left most bit is 1 if start position not already set
-					// Also need to set a new start position if something like 1111000001111111111 instead of skipping.  Doesn't just collapse, skips next entry
-					//
-					
-					/*
-					if (leftBit > 0) {
-						// There are leading 0 bits
-						unsigned long long int _tmp = counter * 32 + leftBit + 1;	
-						// Set the start position of this range.
-						_start.push_back(_tmp);
-					} else {
-						// If trailing 0s, set end position
-						int rightBit = __builtin_ffs(_buffer); // This returns the index + 1 of the right most bit											
-						if(rightBit > 0) {
-							unsigned long long int _tmp = counter * 32 + (32 - rightBit + 1);
-							_end.push_back(_tmp);
-						}	
-					}
-					*/
-					
+			   } else if (_buffer == 0 && (_start.size() > _end.size())) {
+			   		// Start set but ended exactly at the end of a 4 byte set
+			   		unsigned long long _tmp = (counter * 32);
+			   		_end.push_back(_tmp);
 			   }
 			   counter++; // Increment to know the future offset
 			}					

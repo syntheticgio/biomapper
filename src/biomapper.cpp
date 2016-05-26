@@ -63,7 +63,7 @@ bool BioMapper::determineReferences() {
 	      		auto it = _refIDs.find(_element);
 	      		if ( it == _refIDs.end() ) {
 				// New element for this file
-				_refIDs[_element] == 1;
+				_refIDs[_element] = 1;
 				// Element should either have null in it or some number
 				// If the element has something in it, increase the number
 				// else set it to 1.

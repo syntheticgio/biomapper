@@ -5,7 +5,7 @@ CC = g++
 CFLAGS = -std=c++11 -Wno-reorder
 
 # the build target executable
-TARGET = biomapper
+# TARGET = biomapper
 
 all: compile
 
@@ -13,12 +13,14 @@ all: compile
 # call by 'make release' or just by 'make'
 release: CFLAGS += -O3
 release: CXXFLAGS = -DRELEASE
+release: TARGET = biomapper.linux
 release: compile
 
 # Debug mode
 # 'make debug'
 debug: CFLAGS += -pthread -g -Wall
 debug: CXXFLAGS = -DDEBUG
+debug: TARGET = biomapper.linux.debug
 debug: compile
 #debug: interface
 
@@ -27,13 +29,16 @@ debug: compile
 raspberry: CC = g++-4.9
 raspberry: CFLAGS += -g -Wall -gdwarf-3
 raspberry: CXXFLAGS = -DDEBUG
+raspberry: TARGET = biomapper.raspbian
 raspberry: compile
 
 # OSX
 # 'make osx'
+# This is a debug build for OSX
 osx: CC = clang++
 osx: CFLAGS += -stdlib=libc++ -g -Wall -gdwarf-3
 osx: CXXFLAGS = -DDEBUG
+osx: TARGET = biomapper.osx.debug
 osx: compile
 
 # Support functions
