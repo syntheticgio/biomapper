@@ -90,7 +90,7 @@ bool BioMapper::determineReferences() {
 	}
   }
 
-  // referenceIDs has all references along with number of occurences
+  // referenceIDs has all references along with number of occurrences
   // threads vector is set up.
   return true;
 

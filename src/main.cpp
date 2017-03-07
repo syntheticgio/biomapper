@@ -112,7 +112,7 @@ int main (int argc, char* argv[])
 			//long int size = crossingFile.tellg(); // Returns the size of the file.
 			//long int sizeOfFileInInts= size/4;
 
-			crossingFile.seekg (0, ios::beg); // return pointer to begining of file
+			crossingFile.seekg (0, ios::beg); // return pointer to beginning of file
 			//char * memblock = new char [size];
 			
 			unsigned int _buffer = 0; // Buffer recording the binary data
@@ -121,7 +121,7 @@ int main (int argc, char* argv[])
 			vector <unsigned long long int> _start;
 			vector <unsigned long long int> _end;
 
-			// TODO: This might be assuming I'm guarenteeing an whole number of integers are written (currently I believe I am)
+			// TODO: This might be assuming I'm guaranteeing an whole number of integers are written (currently I believe I am)
 
 
 			while(crossingFile.read((char *)&_buffer, sizeof(_buffer))) {
@@ -184,7 +184,7 @@ int main (int argc, char* argv[])
 			crossingFile.close();
 						
 			//TODO: This could be set as a parameter whether or not to keep intermediate files
-			// Delete the temorary data file
+			// Delete the temporary data file
 			std::remove(file.c_str());
 			
 		} else {
@@ -443,7 +443,7 @@ void mapFiles (BioMapper& myMap) {
     refIDOutputFile.open(__refID, ios::binary);
 
 	//
-	// Save the data in binary within the temproary dat files
+	// Save the data in binary within the temporary .dat files
 	//
     for (unsigned long long int i = 0; i < basemap.size(); i++) {
 	  // Write 4 bytes (since each element of basemap is an int)
