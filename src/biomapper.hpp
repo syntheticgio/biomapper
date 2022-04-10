@@ -14,8 +14,14 @@
 //};
 
 
+/**
+ * This is an enumeration of the different types of mapping that can be done.
+ */
 enum CrossMapType { OVERLAP, EXCLUSIVE, COLLAPSE };
 
+/**
+ *
+ */
 class BioMapper
 {
 
@@ -27,6 +33,8 @@ class BioMapper
 
         bool determineReferences(); // Determine the references that are in all files
         bool determineArguments(int argc, char** argv); // Determine the command line arguments
+
+		bool runMapping(std::vector<std::string> files);
 
         // Finish up arguments by verifying that the columns
         // meet criteria for each column.

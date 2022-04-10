@@ -65,4 +65,4 @@ biomapper.o: src/biomapper.cpp src/biomapper.hpp
 
 # clean up the built files
 clean: 
-	$(RM) bin/$(TARGET) src/*.o src/*~
+	$(RM) -r bin/$(TARGET) src/*.o src/*~
