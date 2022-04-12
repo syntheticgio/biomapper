@@ -21,7 +21,17 @@ if __name__ == "__main__":
     # with open(os.path.join(os.path.dirname(__file__), "mapper.hpp")) as f:
     #     ffi.cdef(f.read())
     ffi.cdef(
-        "void cffi_test_bindings(int test);"
+        """
+        void test_bindings(int test);
+        void test_string(char * t);
+        void test_vector(char ** test, int vcount);
+        void test_bool(bool test);
+
+        int test_return_int();
+        char * test_return_string();
+        char ** test_return_vector();
+        bool test_return_bool();
+        """
     )
     # C = ffi.dlopen("./libmapper.so")
 
